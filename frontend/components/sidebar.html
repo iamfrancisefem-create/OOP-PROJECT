@@ -1,0 +1,65 @@
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">P</div>
+    <div class="logo-text">Project<span>Flow</span></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item" data-page="dashboard" href="/pages/dashboard.html">
+      <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
+      <span>Dashboard</span>
+    </a>
+    <a class="nav-item" data-page="projects" href="/pages/projects.html">
+      <span class="nav-icon"><i class="fa-solid fa-folder"></i></span>
+      <span>Projects</span>
+    </a>
+    <a class="nav-item" data-page="tasks" href="/pages/tasks.html">
+      <span class="nav-icon"><i class="fa-solid fa-list-check"></i></span>
+      <span>Tasks</span>
+    </a>
+    <a class="nav-item" data-page="teams" href="/pages/teams.html">
+      <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
+      <span>Teams</span>
+    </a>
+    <div class="nav-section-label">Communication</div>
+    <a class="nav-item" data-page="messages" href="/pages/messages.html">
+      <span class="nav-icon"><i class="fa-solid fa-comment-dots"></i></span>
+      <span>Messages</span>
+      <span class="nav-badge" id="msgBadge" style="display:none">0</span>
+    </a>
+    <a class="nav-item" data-page="notifications" href="/pages/notifications.html">
+      <span class="nav-icon"><i class="fa-solid fa-bell"></i></span>
+      <span>Notifications</span>
+      <span class="nav-badge" id="notifSideBadge" style="display:none">0</span>
+    </a>
+    <div class="nav-section-label">Workspace</div>
+    <a class="nav-item" data-page="reports" href="/pages/reports.html">
+      <span class="nav-icon"><i class="fa-solid fa-chart-bar"></i></span>
+      <span>Reports</span>
+    </a>
+    <a class="nav-item" data-page="files" href="/pages/files.html">
+      <span class="nav-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+      <span>Files</span>
+    </a>
+    <div class="nav-section-label" id="adminSectionLabel" style="display:none">Administration</div>
+    <a class="nav-item" data-page="user-management" href="/pages/user-management.html" id="adminNavLink" style="display:none">
+      <span class="nav-icon"><i class="fa-solid fa-user-shield"></i></span>
+      <span>User Management</span>
+    </a>
+    <div class="nav-section-label">Account</div>
+    <a class="nav-item" data-page="settings" href="/pages/settings.html">
+      <span class="nav-icon"><i class="fa-solid fa-gear"></i></span>
+      <span>Settings</span>
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="avatar" id="sidebarAvatar">U</div>
+      <div class="sidebar-user-info">
+        <div class="name" id="sidebarName">User</div>
+        <div class="role-badge" id="sidebarRole">Member</div>
+      </div>
+    </div>
+  </div>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <link rel="stylesheet" href="../assets/css/forms.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebarContainer"></div>
+    <div class="main-content">
+      <div id="navbarContainer"></div>
+      <div class="page-body" id="pageBody">
+        <div class="stats-grid" id="statsGrid">
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+        </div>
+        <div class="chart-grid" id="chartGrid">
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <div><div class="chart-title">Task Completion</div><div class="chart-sub">Overview of task statuses</div></div>
+            </div>
+            <div class="chart-card-body"><canvas id="taskChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <div><div class="chart-title">Project Progress</div><div class="chart-sub">Completion rate by project</div></div>
+            </div>
+            <div class="chart-card-body"><canvas id="projectChart"></canvas></div>
+          </div>
+        </div>
+        <div class="grid grid-auto mb-6" id="recentProjects">
+          <div class="card"><div class="card-body"><div class="skeleton skeleton-text w-60"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text w-40"></div></div></div>
+          <div class="card"><div class="card-body"><div class="skeleton skeleton-text w-60"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text w-40"></div></div></div>
+        </div>
+        <div class="card" id="activityCard">
+          <div class="card-header"><h3>Recent Activity</h3></div>
+          <div class="card-body">
+            <div class="activity-feed" id="activityFeed">
+              <div class="text-muted text-sm">Loading activities...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="modalContainer"></div>
+  <script type="module">
+    import { DashboardAPI, ProjectAPI, TaskAPI } from '../assets/js/api.js';
+    import { Theme, Session, authGuard, initSidebar, statusBadge, priorityBadge, DateHelper, renderAvatar, toast } from '../assets/js/utils.js';
+
+    if (!authGuard()) { throw new Error('Not authenticated'); }
+
+    Theme.init();
+    const page = 'dashboard';
+
+    async function loadComponent(url, containerId, callback) {
+      try {
+        const res = await fetch(url);
+        const html = await res.text();
+        document.getElementById(containerId).innerHTML = html;
+        if (callback) callback();
+      } catch (e) { console.error('Failed to load component:', url, e); }
+    }
+
+    async function renderStats() {
+      try {
+        const res = await DashboardAPI.getStats();
+        const data = res.data.data;
+        const grid = document.getElementById('statsGrid');
+        grid.innerHTML = '';
+        const cards = [
+          { label: 'Total Projects', value: data.totalProjects || 0, icon: 'fa-folder', color: 'blue', trend: null },
+          { label: 'Completed Tasks', value: data.completedTasks || 0, icon: 'fa-check-circle', color: 'green', trend: 'up' },
+          { label: 'Pending Tasks', value: data.pendingTasks || 0, icon: 'fa-clock', color: 'amber', trend: null },
+          { label: 'Overdue Tasks', value: data.overdueTasks || 0, icon: 'fa-exclamation-circle', color: 'red', trend: 'down' },
+          { label: 'Team Members', value: data.totalMembers || 0, icon: 'fa-users', color: 'cyan', trend: null },
+        ];
+        cards.forEach(c => {
+          const trendIcon = c.trend === 'up' ? 'fa-arrow-up trend-up' : c.trend === 'down' ? 'fa-arrow-down trend-down' : '';
+          grid.innerHTML += `
+            <div class="stat-card">
+              <div class="stat-icon ${c.color}"><i class="fa-solid ${c.icon}"></i></div>
+              <div class="stat-info">
+                <div class="label">${c.label}</div>
+                <div class="value">${c.value}</div>
+                ${trendIcon ? `<div class="trend ${trendIcon.includes('up') ? 'trend-up' : 'trend-down'}"><i class="fa-solid ${trendIcon}"></i> vs last week</div>` : ''}
+              </div>
+            </div>`;
+        });
+      } catch (e) {
+        document.getElementById('statsGrid').innerHTML = '<div class="text-muted">Failed to load stats</div>';
+      }
+    }
+
+    let taskChartInstance, projectChartInstance;
+
+    async function renderCharts() {
+      try {
+        const res = await DashboardAPI.getAnalytics();
+        const data = res.data.data;
+        const taskCtx = document.getElementById('taskChart').getContext('2d');
+        if (taskChartInstance) taskChartInstance.destroy();
+        taskChartInstance = new Chart(taskCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['To Do', 'In Progress', 'Testing', 'Done'],
+            datasets: [{
+              data: [data.todoTasks || 0, data.inProgressTasks || 0, data.testingTasks || 0, data.doneTasks || 0],
+              backgroundColor: ['#94A3B8', '#2563EB', '#F59E0B', '#10B981'],
+              borderWidth: 0,
+            }],
+          },
+          options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, cutout: '70%' },
+        });
+        const projCtx = document.getElementById('projectChart').getContext('2d');
+        if (projectChartInstance) projectChartInstance.destroy();
+        const labels = data.projectLabels || ['Project 1', 'Project 2', 'Project 3'];
+        const progress = data.projectProgress || [30, 60, 90];
+        projectChartInstance = new Chart(projCtx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{ label: 'Progress %', data: progress, backgroundColor: '#2563EB', borderRadius: 6 }],
+          },
+          options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } },
+        });
+      } catch (e) {
+        console.log('Charts failed to load analytics, using defaults');
+      }
+    }
+
+    async function renderRecentProjects() {
+      try {
+        const res = await ProjectAPI.getAll(0, 4);
+        const projects = res.data.data?.content || res.data.data || [];
+        const container = document.getElementById('recentProjects');
+        if (!projects.length) {
+          container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fa-solid fa-folder-open"></i></div><h4>No projects yet</h4><p>Create your first project to get started.</p></div>`;
+          return;
+        }
+        container.innerHTML = projects.map(p => `
+          <div class="project-card" onclick="window.location.href='projects.html?id=${p.id}'">
+            <div class="project-card-header">
+              <div class="project-card-title">${p.title || 'Untitled'}</div>
+              ${statusBadge(p.status)}
+            </div>
+            <div class="project-card-desc">${p.description || 'No description'}</div>
+            <div class="project-progress-wrap">
+              <div class="project-progress-label"><span>Progress</span><span>${Math.round(p.progress || 0)}%</span></div>
+              <div class="progress"><div class="progress-bar ${(p.progress || 0) >= 100 ? 'success' : (p.progress || 0) > 50 ? 'gradient' : ''}" style="width:${p.progress || 0}%"></div></div>
+            </div>
+            <div class="project-card-meta">
+              <span><i class="fa-regular fa-calendar"></i> ${DateHelper.format(p.startDate)}</span>
+              <span><i class="fa-regular fa-clock"></i> ${DateHelper.format(p.endDate)}</span>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('recentProjects').innerHTML = '<div class="text-muted">Failed to load projects</div>';
+      }
+    }
+
+    async function renderActivity() {
+      try {
+        const tasksRes = await TaskAPI.getAll(0, 5);
+        const tasks = tasksRes.data.data?.content || tasksRes.data.data || [];
+        const feed = document.getElementById('activityFeed');
+        if (!tasks.length) {
+          feed.innerHTML = '<div class="text-muted text-sm">No recent activity</div>';
+          return;
+        }
+        feed.innerHTML = tasks.map(t => `
+          <div class="activity-item">
+            <div class="activity-dot-wrap">
+              <div class="activity-dot ${t.status === 'DONE' ? 'success' : t.status === 'IN_PROGRESS' ? '' : 'warning'}"></div>
+              <div class="activity-line"></div>
+            </div>
+            <div class="activity-body">
+              <div class="act-text"><strong>${t.assignedToName || 'Someone'}</strong> ${t.status === 'DONE' ? 'completed' : 'updated'} task <strong>${t.title || 'untitled'}</strong></div>
+              <div class="act-time">${DateHelper.timeAgo(t.updatedAt || t.createdAt)}</div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('activityFeed').innerHTML = '<div class="text-muted text-sm">No recent activity</div>';
+      }
+    }
+
+    async function init() {
+      await loadComponent('../components/navbar.html', 'navbarContainer');
+      await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
+      await loadComponent('../components/modals.html', 'modalContainer');
+      renderStats();
+      renderCharts();
+      renderRecentProjects();
+      renderActivity();
+    }
+    init();
+  </script>
+</body>
+</html>

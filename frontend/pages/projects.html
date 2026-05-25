@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projects — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <link rel="stylesheet" href="../assets/css/forms.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebarContainer"></div>
+    <div class="main-content">
+      <div id="navbarContainer"></div>
+      <div class="page-body">
+        <div class="section-header">
+          <div>
+            <h2>Projects</h2>
+            <p>Manage and track all your projects</p>
+          </div>
+          <div class="flex gap-3">
+            <div class="search-bar">
+              <i class="fa-solid fa-search"></i>
+              <input type="text" id="projectSearch" placeholder="Search projects...">
+            </div>
+            <button class="btn btn-primary" id="newProjectBtn"><i class="fa-solid fa-plus"></i> New Project</button>
+          </div>
+        </div>
+        <div class="grid grid-auto" id="projectList">
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+        </div>
+        <div id="projectPagination" class="mt-6 flex justify-end"></div>
+      </div>
+    </div>
+  </div>
+  <div id="modalContainer"></div>
+  <script type="module">
+    import { ProjectAPI, TeamAPI } from '../assets/js/api.js';
+    import { Theme, Session, authGuard, initSidebar, statusBadge, DateHelper, toast, confirmDialog, closeModal, openModal, renderPagination } from '../assets/js/utils.js';
+
+    if (!authGuard()) throw new Error('Not authenticated');
+    Theme.init();
+    const page = 'projects';
+    let currentPage = 0, totalPages = 0;
+
+    async function loadComponent(url, containerId, cb) {
+      const res = await fetch(url);
+      document.getElementById(containerId).innerHTML = await res.text();
+      if (cb) cb();
+    }
+
+    async function loadProjects(p = 0) {
+      currentPage = p;
+      const container = document.getElementById('projectList');
+      container.innerHTML = '<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>';
+      try {
+        const res = await ProjectAPI.getAll(p, 12);
+        const data = res.data.data;
+        const projects = data.content || data || [];
+        totalPages = data.totalPages || Math.ceil((data.totalElements || projects.length) / 12);
+        if (!projects.length) {
+          container.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon"><i class="fa-solid fa-folder-open"></i></div><h4>No projects found</h4><p>Create your first project to get started.</p></div>`;
+          return;
+        }
+        container.innerHTML = projects.map(p => `
+          <div class="project-card" data-id="${p.id}">
+            <div class="project-card-header">
+              <div class="project-card-title">${p.title || 'Untitled'}</div>
+              ${statusBadge(p.status)}
+            </div>
+            <div class="project-card-desc">${p.description || 'No description'}</div>
+            <div class="project-progress-wrap">
+              <div class="project-progress-label"><span>Progress</span><span>${Math.round(p.progress || 0)}%</span></div>
+              <div class="progress"><div class="progress-bar ${(p.progress || 0) >= 100 ? 'success' : (p.progress || 0) > 50 ? 'gradient' : ''}" style="width:${p.progress || 0}%"></div></div>
+            </div>
+            <div class="project-card-meta">
+              <span><i class="fa-regular fa-calendar"></i> ${DateHelper.format(p.startDate)} - ${DateHelper.format(p.endDate)}</span>
+            </div>
+            <div class="project-card-footer">
+              <div class="avatar-group">${(p.members || []).slice(0, 4).map(m => `<div class="avatar-sm" style="background:var(--primary)">${(m.name || 'U')[0]}</div>`).join('')}</div>
+              <div class="project-actions">
+                <button class="btn btn-sm btn-ghost view-proj" data-id="${p.id}"><i class="fa-solid fa-eye"></i></button>
+                <button class="btn btn-sm btn-ghost edit-proj" data-id="${p.id}"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-sm btn-ghost delete-proj" style="color:var(--danger)" data-id="${p.id}"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+        container.querySelectorAll('.view-proj').forEach(b => b.addEventListener('click', () => window.location.href = `project-details.html?id=${b.dataset.id}`));
+        container.querySelectorAll('.edit-proj').forEach(b => b.addEventListener('click', () => editProject(b.dataset.id)));
+        container.querySelectorAll('.delete-proj').forEach(b => b.addEventListener('click', () => deleteProject(b.dataset.id)));
+        renderPagination('projectPagination', currentPage, totalPages, loadProjects);
+      } catch (e) {
+        container.innerHTML = '<div class="text-muted">Failed to load projects</div>';
+      }
+    }
+
+    async function loadTeamOptions() {
+      try {
+        const res = await TeamAPI.getAll(0, 100);
+        const teams = res.data.data?.content || res.data.data || [];
+        const sel = document.getElementById('projTeam');
+        sel.innerHTML = '<option value="">No team</option>' + teams.map(t => `<option value="${t.id}">${t.teamName || t.name}</option>`).join('');
+      } catch (e) {}
+    }
+
+    async function saveProject() {
+      const title = document.getElementById('projTitle').value.trim();
+      if (!title) { document.getElementById('projTitleErr').textContent = 'Title is required'; return; }
+      const data = {
+        title,
+        description: document.getElementById('projDesc').value.trim(),
+        priority: document.getElementById('projPriority').value,
+        status: document.getElementById('projStatus').value,
+        startDate: document.getElementById('projStart').value,
+        endDate: document.getElementById('projEnd').value,
+        teamId: document.getElementById('projTeam').value || null,
+      };
+      try {
+        const btn = document.getElementById('projSaveBtn');
+        btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+        await ProjectAPI.create(data);
+        toast('Project created successfully', 'success');
+        closeModal('modalCreateProject');
+        loadProjects(0);
+      } catch (e) {
+        toast(e.response?.data?.message || 'Failed to create project', 'error');
+      } finally {
+        const btn = document.getElementById('projSaveBtn');
+        btn.disabled = false; btn.innerHTML = 'Create Project';
+      }
+    }
+
+    async function deleteProject(id) {
+      const ok = await confirmDialog('Delete Project', 'This action cannot be undone.', 'Delete');
+      if (!ok) return;
+      try {
+        await ProjectAPI.delete(id);
+        toast('Project deleted', 'success');
+        loadProjects(currentPage);
+      } catch (e) {
+        toast('Failed to delete project', 'error');
+      }
+    }
+
+    async function init() {
+      await loadComponent('../components/navbar.html', 'navbarContainer');
+      await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
+      await loadComponent('../components/modals.html', 'modalContainer');
+      loadProjects(0);
+      document.getElementById('newProjectBtn').addEventListener('click', () => {
+        loadTeamOptions();
+        document.getElementById('projSaveBtn').onclick = saveProject;
+        document.getElementById('modalCreateProject').querySelector('h3').textContent = 'Create Project';
+        document.getElementById('projSaveBtn').textContent = 'Create Project';
+        document.querySelectorAll('#modalCreateProject .form-input').forEach(i => i.value = '');
+        document.querySelectorAll('#modalCreateProject .form-select').forEach(s => s.selectedIndex = 0);
+        openModal('modalCreateProject');
+      });
+      document.getElementById('projectSearch').addEventListener('input', e => {
+        const q = e.target.value.toLowerCase();
+        document.querySelectorAll('.project-card').forEach(c => {
+          c.style.display = c.querySelector('.project-card-title').textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+      });
+    }
+    init();
+  </script>
+</body>
+</html>

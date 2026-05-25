@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/auth.css">
+  <link rel="stylesheet" href="../assets/css/forms.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-brand">
+      <div class="auth-brand-logo">
+        <div class="logo-box">P</div>
+        <div class="brand-name">Project<span>Flow</span></div>
+      </div>
+      <div class="auth-brand-content">
+        <h1>Manage Projects<br>with Confidence</h1>
+        <p>Track tasks, collaborate with teams, and deliver on time — all in one place.</p>
+      </div>
+      <div class="auth-brand-features">
+        <div class="auth-feature-item">
+          <div class="auth-feature-icon"><i class="fa-solid fa-layer-group"></i></div>
+          <span>Kanban boards & task tracking</span>
+        </div>
+        <div class="auth-feature-item">
+          <div class="auth-feature-icon"><i class="fa-solid fa-users"></i></div>
+          <span>Team collaboration & messaging</span>
+        </div>
+        <div class="auth-feature-item">
+          <div class="auth-feature-icon"><i class="fa-solid fa-chart-line"></i></div>
+          <span>Analytics & performance reports</span>
+        </div>
+      </div>
+      <div class="auth-brand-bottom">&copy; 2026 ProjectFlow. All rights reserved.</div>
+    </div>
+    <div class="auth-form-panel">
+      <div class="auth-form-card">
+        <div class="auth-form-header">
+          <h2>Welcome back</h2>
+          <p>Sign in to your account to continue.</p>
+        </div>
+        <div class="alert-banner" id="loginAlert"></div>
+        <form id="loginForm" novalidate>
+          <div class="form-group mb-4">
+            <label class="form-label">Email Address <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input class="form-input" type="email" id="loginEmail" placeholder="you@company.com" required autocomplete="email">
+            </div>
+            <small class="form-error" id="loginEmailErr"></small>
+          </div>
+          <div class="form-group mb-4">
+            <label class="form-label">Password <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input class="form-input" type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password">
+              <span class="input-suffix" id="togglePass"><i class="fa-regular fa-eye"></i></span>
+            </div>
+            <small class="form-error" id="loginPassErr"></small>
+          </div>
+          <div class="checkbox-row mb-4">
+            <label class="checkbox-label">
+              <input type="checkbox" id="rememberMe"> Remember me
+            </label>
+            <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
+          </div>
+          <button class="btn btn-primary btn-full btn-lg btn-submit" type="submit" id="loginBtn">
+            <span class="btn-text">Sign In</span>
+            <span class="btn-spinner"><span class="spinner"></span></span>
+          </button>
+        </form>
+        <div class="auth-footer">
+          Don't have an account? <a href="register.html">Create one</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { AuthAPI } from '../assets/js/api.js';
+    import { Session, toast, validateForm, setLoading, showAlert, hideAlert } from '../assets/js/utils.js';
+
+    if (Session.isLoggedIn()) window.location.href = 'dashboard.html';
+
+    const form = document.getElementById('loginForm');
+    const email = document.getElementById('loginEmail');
+    const password = document.getElementById('loginPassword');
+    const btn = document.getElementById('loginBtn');
+    const alertEl = document.getElementById('loginAlert');
+
+    document.getElementById('togglePass').addEventListener('click', () => {
+      const t = password.type === 'password' ? 'text' : 'password';
+      password.type = t;
+      document.querySelector('#togglePass i').className = t === 'password' ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+    });
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      hideAlert(alertEl);
+
+      if (!validateForm({
+        '#loginEmail': { required: true, email: true },
+        '#loginPassword': { required: true, min: 6 },
+      })) return;
+
+      setLoading(btn, true);
+      try {
+        const res = await AuthAPI.login({
+          email: email.value.trim(),
+          password: password.value,
+        });
+        const { token, refreshToken, id, email: userEmail, fullName, phone, roles } = res.data.data;
+        Session.set(token, refreshToken, { id, email: userEmail, fullName, phone, roles });
+        toast('Welcome back, ' + (fullName || 'User') + '!', 'success');
+        setTimeout(() => window.location.href = 'dashboard.html', 500);
+      } catch (err) {
+        const msg = err.response?.data?.message || 'Invalid email or password.';
+        showAlert(alertEl, msg, 'error');
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+  </script>
+</body>
+</html>

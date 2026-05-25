@@ -1,0 +1,45 @@
+<nav class="navbar">
+  <div class="navbar-left">
+    <button class="btn-menu-toggle" aria-label="Toggle menu">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div>
+      <h1 class="page-title" id="pageTitle">Dashboard</h1>
+      <div class="breadcrumb" id="breadcrumb">
+        <span>Home</span>
+        <span class="sep">/</span>
+        <span id="currentPageLabel">Dashboard</span>
+      </div>
+    </div>
+  </div>
+  <div class="navbar-right">
+    <div class="search-bar">
+      <i class="fa-solid fa-search"></i>
+      <input type="text" placeholder="Search projects, tasks..." id="globalSearch">
+    </div>
+    <div class="dropdown-wrapper">
+      <button class="btn-icon" id="notifBell" aria-label="Notifications">
+        <i class="fa-solid fa-bell"></i>
+        <span class="badge-dot" id="notifBadge" style="display:none"></span>
+      </button>
+      <div class="dropdown-panel" id="notifDropdown">
+        <div class="dropdown-header">
+          <h4>Notifications</h4>
+          <button class="btn btn-sm btn-ghost" id="markAllRead">Mark all read</button>
+        </div>
+        <div class="dropdown-body" id="notifList">
+          <div class="empty-state" style="padding:24px">
+            <p class="text-muted">No notifications yet</p>
+          </div>
+        </div>
+        <div class="dropdown-footer">
+          <a href="/pages/notifications.html">View all notifications</a>
+        </div>
+      </div>
+    </div>
+    <button class="theme-toggle" id="themeToggleBtn" aria-label="Toggle theme">
+      <i class="fa-solid fa-moon"></i>
+    </button>
+    <div class="navbar-avatar" id="navAvatar" title="Profile"></div>
+  </div>
+</nav>

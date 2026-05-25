@@ -1,0 +1,169 @@
+<div class="modal-overlay" id="modalConfirm">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalConfirmTitle">Confirm Action</h3>
+      <button class="btn-close" onclick="closeModal('modalConfirm')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <p id="modalConfirmText" style="color:var(--text-secondary)">Are you sure?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalConfirm')">Cancel</button>
+      <button class="btn btn-danger" id="modalConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalCreateProject">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3>Create Project</h3>
+      <button class="btn-close" onclick="closeModal('modalCreateProject')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Title <span class="required">*</span></label>
+          <input class="form-input" id="projTitle" placeholder="Project name" required>
+          <small class="form-error" id="projTitleErr"></small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <div class="custom-select-wrapper">
+            <select class="form-select" id="projPriority">
+              <option value="LOW">Low</option>
+              <option value="MEDIUM" selected>Medium</option>
+              <option value="HIGH">High</option>
+              <option value="CRITICAL">Critical</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" id="projDesc" rows="3" placeholder="Project description"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Start Date</label>
+          <input class="form-input" type="date" id="projStart">
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Date <span class="required">*</span></label>
+          <input class="form-input" type="date" id="projEnd" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Team</label>
+          <div class="custom-select-wrapper">
+            <select class="form-select" id="projTeam">
+              <option value="">No team</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <div class="custom-select-wrapper">
+            <select class="form-select" id="projStatus">
+              <option value="NEW">New</option>
+              <option value="ACTIVE">Active</option>
+              <option value="ON_HOLD">On Hold</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalCreateProject')">Cancel</button>
+      <button class="btn btn-primary" id="projSaveBtn">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalCreateTask">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Create Task</h3>
+      <button class="btn-close" onclick="closeModal('modalCreateTask')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Title <span class="required">*</span></label>
+          <input class="form-input" id="taskTitle" placeholder="Task title" required>
+          <small class="form-error" id="taskTitleErr"></small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" id="taskDesc" rows="2"></textarea>
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <div class="custom-select-wrapper">
+              <select class="form-select" id="taskPriority">
+                <option value="LOW">Low</option>
+                <option value="MEDIUM" selected>Medium</option>
+                <option value="HIGH">High</option>
+              <option value="URGENT">Urgent</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Deadline</label>
+            <input class="form-input" type="date" id="taskDeadline">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assign To</label>
+          <div class="custom-select-wrapper">
+            <select class="form-select" id="taskAssignee">
+              <option value="">Unassigned</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Project</label>
+          <div class="custom-select-wrapper">
+            <select class="form-select" id="taskProject">
+              <option value="">Select project</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalCreateTask')">Cancel</button>
+      <button class="btn btn-primary" id="taskSaveBtn">Create Task</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalCreateTeam">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Create Team</h3>
+      <button class="btn-close" onclick="closeModal('modalCreateTeam')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Team Name <span class="required">*</span></label>
+          <input class="form-input" id="teamName" placeholder="Team name" required>
+          <small class="form-error" id="teamNameErr"></small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" id="teamDesc" rows="2" placeholder="Team description"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Add Members</label>
+          <select class="form-select" id="teamMembers" multiple style="min-height:120px">
+          </select>
+          <small class="text-muted text-xs">Ctrl+click to select multiple</small>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalCreateTeam')">Cancel</button>
+      <button class="btn btn-primary" id="teamSaveBtn">Create Team</button>
+    </div>
+  </div>
+</div>

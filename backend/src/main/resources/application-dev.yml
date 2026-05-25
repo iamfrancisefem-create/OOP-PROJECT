@@ -1,0 +1,20 @@
+# =============================================================================
+# Development Profile — relaxed settings for local development
+# =============================================================================
+# Activate with: --spring.profiles.active=dev
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update            # Auto-create/update tables from entities
+    show-sql: true
+
+  flyway:
+    enabled: false                # Disable migrations in dev; use ddl-auto
+
+logging:
+  level:
+    com.pms: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

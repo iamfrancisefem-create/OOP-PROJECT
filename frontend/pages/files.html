@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Files — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <link rel="stylesheet" href="../assets/css/forms.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebarContainer"></div>
+    <div class="main-content">
+      <div id="navbarContainer"></div>
+      <div class="page-body">
+        <div class="section-header">
+          <div>
+            <h2>Files</h2>
+            <p>Upload and manage project files</p>
+          </div>
+          <div class="flex gap-3">
+            <div class="custom-select-wrapper" style="min-width:180px">
+              <select class="form-select" id="fileProjectFilter">
+                <option value="">All Projects</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="drop-zone mb-6" id="dropZone">
+          <div class="dz-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+          <h4>Drop files here or click to upload</h4>
+          <p>PDF, DOCX, PNG, JPG, ZIP — Max 10MB</p>
+          <input type="file" id="fileInput" multiple hidden>
+        </div>
+        <div id="uploadProgress" style="display:none"></div>
+        <div class="section-header mt-6">
+          <h3 style="font-size:18px">Uploaded Files</h3>
+        </div>
+        <div id="fileList" class="grid" style="gap:var(--space-3)">
+          <div class="text-muted text-sm">Select a project to view files.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { FileAPI, ProjectAPI } from '../assets/js/api.js';
+    import { Theme, Session, authGuard, initSidebar, DateHelper, toast, confirmDialog, formatSize, fileIconClass, fileIconFA } from '../assets/js/utils.js';
+
+    if (!authGuard()) throw new Error('Not authenticated');
+    Theme.init();
+    const page = 'files';
+
+    async function loadComponent(url, containerId, cb) {
+      const res = await fetch(url);
+      document.getElementById(containerId).innerHTML = await res.text();
+      if (cb) cb();
+    }
+
+    async function loadProjectFilter() {
+      try {
+        const res = await ProjectAPI.getAll(0, 100);
+        const projects = res.data.data?.content || res.data.data || [];
+        const sel = document.getElementById('fileProjectFilter');
+        sel.innerHTML = '<option value="">All Projects</option>' + projects.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+        sel.addEventListener('change', () => loadFiles());
+      } catch (e) {}
+    }
+
+    async function loadFiles() {
+      const projectId = document.getElementById('fileProjectFilter').value;
+      const container = document.getElementById('fileList');
+      container.innerHTML = '<div class="text-muted text-sm">Loading files...</div>';
+      try {
+        const res = projectId ? await FileAPI.getByProject(projectId) : { data: { data: [] } };
+        const files = projectId ? (res.data.data?.content || res.data.data || []) : await getAllFiles();
+        if (!files.length) {
+          container.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon"><i class="fa-solid fa-folder-open"></i></div><h4>No files</h4><p>Upload files to see them here.</p></div>';
+          return;
+        }
+        container.innerHTML = files.map(f => `
+          <div class="file-card">
+            <div class="file-icon-wrap ${fileIconClass(f.fileName || f.name)}"><i class="${fileIconFA(f.fileName || f.name)}"></i></div>
+            <div class="file-info">
+              <div class="file-name">${f.fileName || f.name || 'Unnamed'}</div>
+              <div class="file-meta">${formatSize(f.size)} — ${DateHelper.format(f.uploadedAt)}</div>
+            </div>
+            <div class="file-actions">
+              <a class="btn btn-sm btn-ghost" href="${FileAPI.download(f.id)}" target="_blank"><i class="fa-solid fa-download"></i></a>
+              <button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="deleteFile(${f.id})"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = '<div class="text-muted">Failed to load files</div>';
+      }
+    }
+
+    async function getAllFiles() {
+      try {
+        const res = await ProjectAPI.getAll(0, 100);
+        const projects = res.data.data?.content || res.data.data || [];
+        let all = [];
+        for (const p of projects) {
+          try {
+            const fres = await FileAPI.getByProject(p.id);
+            all = all.concat(fres.data.data?.content || fres.data.data || []);
+          } catch (e) {}
+        }
+        return all;
+      } catch { return []; }
+    }
+
+    window.deleteFile = async function(id) {
+      const ok = await confirmDialog('Delete File', 'This cannot be undone.', 'Delete');
+      if (!ok) return;
+      try { await FileAPI.delete(id); toast('File deleted', 'success'); loadFiles(); } catch (e) { toast('Failed', 'error'); }
+    };
+
+    async function uploadFiles(files) {
+      const projectId = document.getElementById('fileProjectFilter').value;
+      if (!projectId) { toast('Please select a project first', 'warning'); return; }
+      const progressContainer = document.getElementById('uploadProgress');
+      progressContainer.style.display = 'block';
+      for (const file of files) {
+        const item = document.createElement('div');
+        item.className = 'upload-progress-item mb-2';
+        item.innerHTML = `<div class="upload-progress-info"><div class="up-name">${file.name}</div><div class="upload-progress-track"><div class="upload-progress-bar" style="width:0%"></div></div></div><span class="text-xs text-muted" id="upPct">0%</span>`;
+        progressContainer.appendChild(item);
+        try {
+          await FileAPI.upload(projectId, file, pct => {
+            item.querySelector('.upload-progress-bar').style.width = pct + '%';
+            item.querySelector('#upPct').textContent = pct + '%';
+          });
+          toast(`${file.name} uploaded`, 'success');
+          setTimeout(() => item.remove(), 1000);
+        } catch (e) {
+          item.querySelector('.upload-progress-bar').style.background = 'var(--danger)';
+          toast(`Failed to upload ${file.name}`, 'error');
+        }
+      }
+      loadFiles();
+    }
+
+    document.getElementById('dropZone').addEventListener('click', () => document.getElementById('fileInput').click());
+    document.getElementById('fileInput').addEventListener('change', function() {
+      if (this.files.length) uploadFiles([...this.files]);
+      this.value = '';
+    });
+    document.getElementById('dropZone').addEventListener('dragover', e => { e.preventDefault(); document.getElementById('dropZone').classList.add('drag-active'); });
+    document.getElementById('dropZone').addEventListener('dragleave', () => document.getElementById('dropZone').classList.remove('drag-active'));
+    document.getElementById('dropZone').addEventListener('drop', e => {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.remove('drag-active');
+      if (e.dataTransfer.files.length) uploadFiles([...e.dataTransfer.files]);
+    });
+
+    async function init() {
+      await loadComponent('../components/navbar.html', 'navbarContainer');
+      await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
+      loadProjectFilter();
+    }
+    init();
+  </script>
+</body>
+</html>

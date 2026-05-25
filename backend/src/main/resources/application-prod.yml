@@ -1,0 +1,27 @@
+# =============================================================================
+# Production Profile — hardened settings for deployment
+# =============================================================================
+# Activate with: --spring.profiles.active=prod
+
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate          # Never auto-modify production schema
+    show-sql: false
+
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    com.pms: WARN
+    org.springframework.security: WARN
+    org.hibernate: ERROR

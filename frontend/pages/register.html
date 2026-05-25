@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/auth.css">
+  <link rel="stylesheet" href="../assets/css/forms.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-brand">
+      <div class="auth-brand-logo">
+        <div class="logo-box">P</div>
+        <div class="brand-name">Project<span>Flow</span></div>
+      </div>
+      <div class="auth-brand-content">
+        <h1>Start Your<br>Journey Today</h1>
+        <p>Create an account and begin managing your projects efficiently.</p>
+      </div>
+      <div class="auth-brand-features">
+        <div class="auth-feature-item">
+          <div class="auth-feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+          <span>Secure & encrypted data</span>
+        </div>
+        <div class="auth-feature-item">
+          <div class="auth-feature-icon"><i class="fa-solid fa-mobile-screen"></i></div>
+          <span>Access anywhere, anytime</span>
+        </div>
+      </div>
+      <div class="auth-brand-bottom">&copy; 2026 ProjectFlow. All rights reserved.</div>
+    </div>
+    <div class="auth-form-panel">
+      <div class="auth-form-card">
+        <div class="auth-form-header">
+          <button class="back-link" onclick="history.back()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+          <h2>Create Account</h2>
+          <p>Fill in your details to get started.</p>
+        </div>
+        <div class="alert-banner" id="registerAlert"></div>
+        <form id="registerForm" novalidate>
+          <div class="form-group mb-4">
+            <label class="form-label">Full Name <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-user input-icon"></i>
+              <input class="form-input" id="regName" placeholder="John Doe" required>
+            </div>
+            <small class="form-error" id="regNameErr"></small>
+          </div>
+          <div class="form-group mb-4">
+            <label class="form-label">Email <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input class="form-input" type="email" id="regEmail" placeholder="you@company.com" required>
+            </div>
+            <small class="form-error" id="regEmailErr"></small>
+          </div>
+          <div class="form-group mb-4">
+            <label class="form-label">Phone</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-phone input-icon"></i>
+              <input class="form-input" id="regPhone" placeholder="+123456789">
+            </div>
+          </div>
+          <div class="form-group mb-4">
+            <label class="form-label">Password <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input class="form-input" type="password" id="regPassword" placeholder="Min. 6 characters" required>
+            </div>
+            <small class="form-error" id="regPassErr"></small>
+            <div class="password-strength" id="pwStrength" style="display:none">
+              <div class="strength-bar-track"><div class="strength-bar" id="strengthBar"></div></div>
+              <span class="strength-label" id="strengthLabel"></span>
+            </div>
+          </div>
+          <div class="form-group mb-4">
+            <label class="form-label">Confirm Password <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input class="form-input" type="password" id="regConfirm" placeholder="Repeat password" required>
+            </div>
+            <small class="form-error" id="regConfirmErr"></small>
+          </div>
+          <button class="btn btn-primary btn-full btn-lg btn-submit" type="submit" id="registerBtn">
+            <span class="btn-text">Create Account</span>
+            <span class="btn-spinner"><span class="spinner"></span></span>
+          </button>
+        </form>
+        <div class="auth-footer">
+          Already have an account? <a href="login.html">Sign in</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { AuthAPI } from '../assets/js/api.js';
+    import { Session, toast, validateForm, setLoading, showAlert, hideAlert, Validators } from '../assets/js/utils.js';
+
+    if (Session.isLoggedIn()) window.location.href = 'dashboard.html';
+
+    const form = document.getElementById('registerForm');
+    const btn = document.getElementById('registerBtn');
+    const alertEl = document.getElementById('registerAlert');
+    const pwInput = document.getElementById('regPassword');
+    const confirmInput = document.getElementById('regConfirm');
+
+    pwInput.addEventListener('input', () => {
+      const val = pwInput.value;
+      if (!val) { document.getElementById('pwStrength').style.display = 'none'; return; }
+      const result = Validators.password(val);
+      document.getElementById('pwStrength').style.display = 'block';
+      const bar = document.getElementById('strengthBar');
+      bar.className = 'strength-bar';
+      bar.classList.add(result.label);
+      document.getElementById('strengthLabel').textContent = result.label.charAt(0).toUpperCase() + result.label.slice(1);
+      document.getElementById('strengthLabel').className = 'strength-label ' + result.label;
+    });
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      hideAlert(alertEl);
+
+      if (!validateForm({
+        '#regName': { required: true },
+        '#regEmail': { required: true, email: true },
+        '#regPassword': { required: true, min: 6 },
+        '#regConfirm': { required: true, match: '#regPassword' },
+      })) return;
+
+      setLoading(btn, true);
+      try {
+        const res = await AuthAPI.register({
+          fullName: document.getElementById('regName').value.trim(),
+          email: document.getElementById('regEmail').value.trim(),
+          phone: document.getElementById('regPhone').value.trim(),
+          password: pwInput.value,
+
+        });
+        const { token, refreshToken, id, email, fullName, phone, roles } = res.data.data;
+        Session.set(token, refreshToken, { id, email, fullName, phone, roles });
+        toast('Account created successfully!', 'success');
+        setTimeout(() => window.location.href = 'dashboard.html', 500);
+      } catch (err) {
+        const msg = err.response?.data?.message || 'Registration failed. Please try again.';
+        showAlert(alertEl, msg, 'error');
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+  </script>
+</body>
+</html>

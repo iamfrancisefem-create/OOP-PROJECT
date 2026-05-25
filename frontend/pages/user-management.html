@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Management — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <link rel="stylesheet" href="../assets/css/forms.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebarContainer"></div>
+    <div class="main-content">
+      <div id="navbarContainer"></div>
+      <div class="page-body">
+        <div class="section-header">
+          <div>
+            <h2>User Management</h2>
+            <p>Manage user roles and permissions</p>
+          </div>
+          <div class="flex gap-3">
+            <div class="search-bar">
+              <i class="fa-solid fa-search"></i>
+              <input type="text" id="userSearch" placeholder="Search users...">
+            </div>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="table" id="userTable">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Current Role</th>
+                <th>Change Role</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody">
+              <tr><td colspan="5" class="text-muted" style="text-align:center;padding:32px">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="userPagination" class="mt-6 flex justify-end"></div>
+      </div>
+    </div>
+  </div>
+  <div id="modalContainer"></div>
+  <script type="module">
+    import { UserAPI } from '../assets/js/api.js';
+    import { Theme, Session, authGuard, initSidebar, toast, confirmDialog, renderPagination, ROLES } from '../assets/js/utils.js';
+
+    if (!authGuard()) throw new Error('Not authenticated');
+    if (!Session.hasRole(ROLES.ADMIN)) {
+      window.location.href = 'dashboard.html';
+      throw new Error('Access denied');
+    }
+    Theme.init();
+    const page = 'user-management';
+    let currentPage = 0, totalPages = 0;
+
+    async function loadComponent(url, containerId, cb) {
+      try {
+        const res = await fetch(url + '?v=' + Date.now());
+        document.getElementById(containerId).innerHTML = await res.text();
+        if (cb) cb();
+      } catch (e) {
+        console.error('Failed to load component:', url, e);
+      }
+    }
+
+    async function loadUsers(p = 0) {
+      currentPage = p;
+      const tbody = document.getElementById('userTableBody');
+      tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Loading...</td></tr>';
+      try {
+        const res = await UserAPI.getAll(p, 20);
+        const data = res.data.data;
+        const users = data.content || data || [];
+        totalPages = data.totalPages || 1;
+        if (!users.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-muted">No users found.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = users.map(u => `
+          <tr>
+            <td>
+              <div class="user-cell">
+                <div class="mini-avatar">${(u.fullName || u.email || '?')[0].toUpperCase()}</div>
+                <span style="font-weight:600">${u.fullName || 'N/A'}</span>
+              </div>
+            </td>
+            <td>${u.email}</td>
+            <td>${u.phone || '—'}</td>
+            <td><span class="role-badge" style="display:inline-flex;font-size:11px;padding:3px 10px">${(u.roles?.[0] || 'NONE').replace(/_/g, ' ')}</span></td>
+            <td>
+              <select class="form-select role-select" data-user-id="${u.id}" data-current-role="${u.roles?.[0] || ''}" style="width:auto;min-width:140px">
+                ${Object.values(ROLES).map(r => `<option value="${r}" ${u.roles?.[0] === r ? 'selected' : ''}>${r.replace(/_/g, ' ')}</option>`).join('')}
+              </select>
+            </td>
+          </tr>
+        `).join('');
+        document.querySelectorAll('.role-select').forEach(sel => {
+          sel.addEventListener('change', () => changeUserRole(sel));
+        });
+        renderPagination('userPagination', currentPage, totalPages, loadUsers);
+      } catch (e) {
+        console.error('Failed to load users:', e);
+        tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Failed to load users. Check console (F12) for details.</td></tr>';
+      }
+    }
+
+    async function changeUserRole(selectEl) {
+      const userId = selectEl.dataset.userId;
+      const newRole = selectEl.value;
+      const currentRole = selectEl.dataset.currentRole;
+      if (newRole === currentRole) return;
+
+      const ok = await confirmDialog(
+        'Change User Role',
+        `Are you sure you want to change this user's role to ${newRole.replace(/_/g, ' ')}?`,
+        'Change Role'
+      );
+      if (!ok) {
+        selectEl.value = currentRole;
+        return;
+      }
+
+      try {
+        const currentUser = Session.getUser();
+        await UserAPI.updateRole(userId, newRole);
+        selectEl.dataset.currentRole = newRole;
+        const row = selectEl.closest('tr');
+        row.querySelector('.role-badge').textContent = newRole.replace(/_/g, ' ');
+        toast('User role updated successfully', 'success');
+
+        if (currentUser && userId == currentUser.id) {
+          const refreshed = await UserAPI.getById(userId);
+          const u = refreshed.data.data;
+          Session.set(Session.getToken(), Session.getRefresh(), { email: u.email, fullName: u.fullName, phone: u.phone, profileImage: u.profileImage, roles: u.roles, id: u.id });
+        }
+      } catch (e) {
+        selectEl.value = currentRole;
+        toast(e.response?.data?.message || 'Failed to update role', 'error');
+      }
+    }
+
+    async function init() {
+      try {
+        await loadComponent('../components/navbar.html', 'navbarContainer');
+      await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
+        await loadUsers(0);
+      } catch (e) {
+        console.error('Init error:', e);
+      }
+      document.getElementById('userSearch').addEventListener('input', e => {
+        const q = e.target.value.toLowerCase();
+        document.querySelectorAll('#userTableBody tr').forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(q) ? '' : 'none';
+        });
+      });
+    }
+    init();
+  </script>
+</body>
+</html>

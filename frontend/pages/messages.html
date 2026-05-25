@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebarContainer"></div>
+    <div class="main-content">
+      <div id="navbarContainer"></div>
+      <div class="page-body">
+        <div class="section-header">
+          <div>
+            <h2>Messages</h2>
+            <p>Real-time team chat</p>
+          </div>
+        </div>
+        <div class="chat-layout">
+          <div class="chat-sidebar" id="chatSidebar">
+            <div class="chat-sidebar-header">
+              <h3>Contacts</h3>
+              <div class="search-bar" style="max-width:100%">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" id="contactSearch" placeholder="Search contacts...">
+              </div>
+            </div>
+            <div class="chat-contacts" id="contactList">
+              <div class="text-muted text-sm" style="padding:24px;text-align:center">Loading contacts...</div>
+            </div>
+          </div>
+          <div class="chat-main">
+            <div class="chat-main-header">
+              <button class="btn btn-sm btn-ghost" id="chatBackBtn" style="display:none"><i class="fa-solid fa-arrow-left"></i></button>
+              <div id="chatHeaderInfo">
+                <div class="text-muted" style="padding:24px;text-align:center">Select a contact to start chatting</div>
+              </div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+              <div class="empty-state" style="padding:48px">
+                <p class="text-muted">Select a conversation</p>
+              </div>
+            </div>
+            <div class="typing-indicator" id="typingIndicator" style="display:none">
+              <div class="typing-dots"><span></span><span></span><span></span></div>
+              <span id="typingText">typing...</span>
+            </div>
+            <div class="chat-input-bar">
+              <div class="chat-input-wrap">
+                <textarea class="chat-input" id="chatInput" rows="1" placeholder="Type a message..." disabled></textarea>
+              </div>
+              <button class="btn btn-primary btn-sm" id="sendBtn" disabled><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { MessageAPI, UserAPI } from '../assets/js/api.js';
+    import { Theme, Session, authGuard, initSidebar, DateHelper, toast } from '../assets/js/utils.js';
+
+    if (!authGuard()) throw new Error('Not authenticated');
+    Theme.init();
+    const page = 'messages';
+    let currentChatUserId = null;
+    let ws = null;
+    let allUsers = [];
+
+    async function loadComponent(url, containerId, cb) {
+      const res = await fetch(url);
+      document.getElementById(containerId).innerHTML = await res.text();
+      if (cb) cb();
+    }
+
+    async function loadContacts() {
+      try {
+        const res = await UserAPI.getAll(0, 200);
+        allUsers = (res.data.data?.content || res.data.data || []).filter(u => u.id !== Session.getUser()?.id);
+        const list = document.getElementById('contactList');
+        if (!allUsers.length) {
+          list.innerHTML = '<div class="text-muted text-sm" style="padding:24px;text-align:center">No other users found</div>';
+          return;
+        }
+        list.innerHTML = allUsers.map(u => `
+          <div class="chat-contact" data-id="${u.id}">
+            <div class="chat-contact-avatar">
+              ${(u.fullName || u.email || 'U')[0].toUpperCase()}
+              <span class="online-dot"></span>
+            </div>
+            <div class="chat-contact-info">
+              <div class="chat-contact-name">${u.fullName || u.email || 'Unknown'}</div>
+              <div class="chat-contact-preview">Click to chat</div>
+            </div>
+          </div>
+        `).join('');
+        list.querySelectorAll('.chat-contact').forEach(el => {
+          el.addEventListener('click', () => openChat(el.dataset.id));
+        });
+      } catch (e) {
+        document.getElementById('contactList').innerHTML = '<div class="text-muted">Failed to load contacts</div>';
+      }
+    }
+
+    async function openChat(userId) {
+      currentChatUserId = userId;
+      const user = allUsers.find(u => u.id == userId);
+      document.getElementById('chatHeaderInfo').innerHTML = user ? `<div style="font-weight:600">${user.fullName || user.email}</div><div class="text-xs text-muted">Online</div>` : '';
+      document.getElementById('chatBackBtn').style.display = 'flex';
+      document.getElementById('chatInput').disabled = false;
+      document.getElementById('sendBtn').disabled = false;
+      document.querySelectorAll('.chat-contact').forEach(c => c.classList.remove('active'));
+      document.querySelector(`.chat-contact[data-id="${userId}"]`)?.classList.add('active');
+
+      const messagesContainer = document.getElementById('chatMessages');
+      messagesContainer.innerHTML = '<div class="text-muted text-sm" style="text-align:center;padding:24px">Loading messages...</div>';
+
+      try {
+        const res = await MessageAPI.getChatHistory(userId);
+        const messages = res.data.data?.content || res.data.data || [];
+        renderMessages(messages);
+      } catch (e) {
+        document.getElementById('chatMessages').innerHTML = '<div class="text-muted text-sm" style="text-align:center;padding:24px">No messages yet</div>';
+      }
+
+      connectWebSocket(userId);
+
+      if (window.innerWidth < 768) {
+        document.getElementById('chatSidebar').classList.remove('open');
+      }
+    }
+
+    function renderMessages(messages) {
+      const container = document.getElementById('chatMessages');
+      if (!messages.length) {
+        container.innerHTML = '<div class="empty-state" style="padding:48px"><p class="text-muted">No messages yet. Say hello!</p></div>';
+        return;
+      }
+      const currentUserId = Session.getUser()?.id;
+      container.innerHTML = messages.map(m => {
+        const isSelf = String(m.senderId) === String(currentUserId);
+        return `
+          <div class="msg-group ${isSelf ? 'self' : ''}">
+            ${!isSelf ? `<div class="msg-avatar">${(m.senderName || 'U')[0].toUpperCase()}</div>` : ''}
+            <div class="msg-bubbles">
+              <div class="msg-bubble">${m.content || ''}</div>
+              <div class="msg-time">${DateHelper.formatTime ? DateHelper.formatTime(m.sentAt) : new Date(m.sentAt).toLocaleTimeString()} ${isSelf && m.readStatus ? '<span class="msg-read-status"><i class="fa-solid fa-check-double"></i></span>' : ''}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function connectWebSocket(userId) {
+      if (ws) ws.close();
+      const token = Session.getToken();
+      ws = new WebSocket(`ws://localhost:8080/ws/chat?token=${token}`);
+      ws.onmessage = event => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (String(msg.senderId) === String(userId) || String(msg.senderId) === String(Session.getUser()?.id)) {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML += `
+              <div class="msg-group ${String(msg.senderId) === String(Session.getUser()?.id) ? 'self' : ''}">
+                ${String(msg.senderId) !== String(Session.getUser()?.id) ? `<div class="msg-avatar">${(msg.senderName || 'U')[0]}</div>` : ''}
+                <div class="msg-bubbles">
+                  <div class="msg-bubble">${msg.content}</div>
+                  <div class="msg-time">Just now</div>
+                </div>
+              </div>`;
+            container.scrollTop = container.scrollHeight;
+          }
+        } catch (e) {}
+      };
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const content = input.value.trim();
+      if (!content || !currentChatUserId) return;
+      input.value = '';
+      try {
+        await MessageAPI.send(currentChatUserId, content);
+        const container = document.getElementById('chatMessages');
+        container.innerHTML += `
+          <div class="msg-group self">
+            <div class="msg-bubbles">
+              <div class="msg-bubble">${content}</div>
+              <div class="msg-time">Just now</div>
+            </div>
+          </div>`;
+        container.scrollTop = container.scrollHeight;
+      } catch (e) {
+        toast('Failed to send message', 'error');
+      }
+    }
+
+    document.getElementById('sendBtn').addEventListener('click', sendMessage);
+    document.getElementById('chatInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    document.getElementById('chatBackBtn').addEventListener('click', () => {
+      document.getElementById('chatSidebar').classList.toggle('open');
+    });
+    document.getElementById('contactSearch').addEventListener('input', e => {
+      const q = e.target.value.toLowerCase();
+      document.querySelectorAll('.chat-contact').forEach(c => {
+        const name = c.querySelector('.chat-contact-name')?.textContent?.toLowerCase() || '';
+        c.style.display = name.includes(q) ? '' : 'none';
+      });
+    });
+
+    async function init() {
+      await loadComponent('../components/navbar.html', 'navbarContainer');
+      await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
+      loadContacts();
+    }
+    init();
+  </script>
+</body>
+</html>

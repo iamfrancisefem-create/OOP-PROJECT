@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebarContainer"></div>
+    <div class="main-content">
+      <div id="navbarContainer"></div>
+      <div class="page-body">
+        <div class="section-header">
+          <div>
+            <h2>Notifications</h2>
+            <p>Stay updated with your activity</p>
+          </div>
+          <button class="btn btn-sm btn-outline" id="markAllReadBtn"><i class="fa-solid fa-check-double"></i> Mark All Read</button>
+        </div>
+        <div class="card">
+          <div class="card-body" id="notifPageList">
+            <div class="text-muted">Loading notifications...</div>
+          </div>
+        </div>
+        <div id="notifPagination" class="mt-4 flex justify-end"></div>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { NotificationAPI } from '../assets/js/api.js';
+    import { Theme, authGuard, initSidebar, DateHelper, toast, renderPagination } from '../assets/js/utils.js';
+
+    if (!authGuard()) throw new Error('Not authenticated');
+    Theme.init();
+    const page = 'notifications';
+    let currentPage = 0, totalPages = 0;
+
+    async function loadComponent(url, containerId, cb) {
+      const res = await fetch(url);
+      document.getElementById(containerId).innerHTML = await res.text();
+      if (cb) cb();
+    }
+
+    async function loadNotifs(p = 0) {
+      currentPage = p;
+      const container = document.getElementById('notifPageList');
+      if (!container) return;
+      container.innerHTML = '<div class="text-muted">Loading...</div>';
+      try {
+        const res = await NotificationAPI.getAll(p, 15);
+        const data = res.data.data;
+        const notifs = data.content || data || [];
+        totalPages = data.totalPages || 1;
+        if (!notifs.length) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-icon"><i class="fa-solid fa-bell-slash"></i></div><h4>No notifications</h4><p>You\'re all caught up!</p></div>';
+          return;
+        }
+        container.innerHTML = notifs.map(n => `
+          <div class="notif-item ${n.seen ? '' : 'unread'}" data-id="${n.id}" style="cursor:pointer;padding:16px;border-bottom:1px solid var(--border)">
+            <div class="notif-icon-wrap" style="background:${n.seen ? 'var(--surface-2)' : 'var(--primary-light)'}">
+              <i class="fa-solid ${n.type === 'TASK_ASSIGNED' ? 'fa-list-check' : n.type === 'MESSAGE' ? 'fa-comment' : n.type === 'DEADLINE' ? 'fa-clock' : 'fa-bell'}"></i>
+            </div>
+            <div class="notif-body" style="flex:1">
+              <div class="notif-title">${n.title || 'Notification'}</div>
+              <div class="notif-sub">${n.message || ''}</div>
+              <div class="notif-sub" style="margin-top:4px;font-size:11px;color:var(--text-muted)">${DateHelper.timeAgo(n.createdAt)}</div>
+            </div>
+          </div>
+        `).join('');
+        container.querySelectorAll('.notif-item').forEach(el => {
+          el.addEventListener('click', async () => {
+            const id = el.dataset.id;
+            try {
+              await NotificationAPI.markRead(id);
+              el.remove();
+              const remaining = container.querySelectorAll('.notif-item').length;
+              if (!remaining) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon"><i class="fa-solid fa-bell-slash"></i></div><h4>No notifications</h4><p>You\'re all caught up!</p></div>';
+              }
+            } catch (e) {}
+          });
+        });
+        renderPagination('notifPagination', currentPage, totalPages, loadNotifs);
+      } catch (e) {
+        container.innerHTML = '<div class="text-muted">Failed to load notifications</div>';
+      }
+    }
+
+    async function init() {
+      await loadComponent('../components/navbar.html', 'navbarContainer');
+      await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
+      loadNotifs(0);
+      document.getElementById('markAllReadBtn').addEventListener('click', async () => {
+        try {
+          await NotificationAPI.markAllRead();
+          document.querySelectorAll('.notif-item').forEach(el => el.classList.remove('unread'));
+          toast('All marked as read', 'success');
+        } catch (e) { toast('Failed', 'error'); }
+      });
+    }
+    init();
+  </script>
+</body>
+</html>

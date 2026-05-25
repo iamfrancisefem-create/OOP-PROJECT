@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teams — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <link rel="stylesheet" href="../assets/css/forms.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebarContainer"></div>
+    <div class="main-content">
+      <div id="navbarContainer"></div>
+      <div class="page-body">
+        <div class="section-header">
+          <div>
+            <h2>Teams</h2>
+            <p>Manage teams and members</p>
+          </div>
+          <button class="btn btn-primary" id="newTeamBtn"><i class="fa-solid fa-plus"></i> New Team</button>
+        </div>
+        <div class="grid grid-auto" id="teamList">
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="modalContainer"></div>
+  <script type="module">
+    import { TeamAPI, UserAPI } from '../assets/js/api.js';
+    import { Theme, Session, authGuard, initSidebar, toast, confirmDialog, closeModal, openModal, renderAvatar } from '../assets/js/utils.js';
+
+    if (!authGuard()) throw new Error('Not authenticated');
+    Theme.init();
+    const page = 'teams';
+
+    async function loadComponent(url, containerId, cb) {
+      const res = await fetch(url);
+      document.getElementById(containerId).innerHTML = await res.text();
+      if (cb) cb();
+    }
+
+    async function loadTeams() {
+      const container = document.getElementById('teamList');
+      try {
+        const res = await TeamAPI.getAll(0, 50);
+        const teams = res.data.data?.content || res.data.data || [];
+        if (!teams.length) {
+          container.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon"><i class="fa-solid fa-users"></i></div><h4>No teams yet</h4><p>Create your first team to collaborate.</p></div>`;
+          return;
+        }
+        container.innerHTML = teams.map(t => `
+          <div class="team-card">
+            <div class="team-card-header">
+              <div class="team-card-title">${t.teamName || t.name || 'Unnamed Team'}</div>
+              <div class="flex gap-2">
+                <button class="btn btn-sm btn-ghost add-member-btn" data-id="${t.id}"><i class="fa-solid fa-user-plus"></i></button>
+                <button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="deleteTeam(${t.id})"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </div>
+            <div class="team-card-desc">${t.description || 'No description'}</div>
+            <div class="member-list" id="members-${t.id}">
+              <div class="text-muted text-sm">Loading members...</div>
+            </div>
+          </div>
+        `).join('');
+        teams.forEach(t => loadMembers(t.id));
+        document.querySelectorAll('.add-member-btn').forEach(b => b.addEventListener('click', () => addMember(b.dataset.id)));
+      } catch (e) {
+        container.innerHTML = '<div class="text-muted">Failed to load teams</div>';
+      }
+    }
+
+    async function loadMembers(teamId) {
+      try {
+        const res = await TeamAPI.getById(teamId);
+        const team = res.data.data;
+        const members = team.members || [];
+        const list = document.getElementById(`members-${teamId}`);
+        if (!members.length) {
+          list.innerHTML = '<div class="text-muted text-sm" style="padding:8px 0">No members</div>';
+          return;
+        }
+        list.innerHTML = members.map(m => `
+          <div class="member-item">
+            <div class="member-avatar">${renderAvatar(m.fullName || m.name || m.email || 'U', null, 38)}</div>
+            <div class="member-info">
+              <div class="member-name">${m.fullName || m.name || m.email || 'Unknown'}</div>
+              <div class="member-role">${m.role || 'Member'}</div>
+            </div>
+            <div class="member-tasks">${m.taskCount || 0} tasks</div>
+            <button class="btn btn-sm btn-ghost" style="color:var(--danger)" onclick="removeMember(${teamId}, ${m.userId})"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+        `).join('');
+      } catch (e) {}
+    }
+
+    async function loadUserOptions() {
+      try {
+        const res = await UserAPI.getAll(0, 200);
+        const users = res.data.data?.content || res.data.data || [];
+        const sel = document.getElementById('teamMembers');
+        sel.innerHTML = users.map(u => `<option value="${u.id}">${u.fullName || u.email}</option>`).join('');
+      } catch {}
+    }
+
+    async function saveTeam() {
+      const name = document.getElementById('teamName').value.trim();
+      if (!name) { document.getElementById('teamNameErr').textContent = 'Team name is required'; return; }
+      try {
+        const btn = document.getElementById('teamSaveBtn');
+        btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+        const res = await TeamAPI.create({ name: name, description: document.getElementById('teamDesc').value.trim() });
+        const teamId = res.data.data.id;
+        const memberSelect = document.getElementById('teamMembers');
+        const selectedIds = [...memberSelect.selectedOptions].map(o => o.value);
+        for (const userId of selectedIds) {
+          try { await TeamAPI.addMember(teamId, userId, 'TEAM_MEMBER'); } catch {}
+        }
+        toast('Team created with ' + selectedIds.length + ' members', 'success');
+        closeModal('modalCreateTeam');
+        loadTeams();
+      } catch (e) {
+        toast(e.response?.data?.message || 'Failed to create team', 'error');
+      } finally {
+        const btn = document.getElementById('teamSaveBtn');
+        btn.disabled = false; btn.innerHTML = 'Create Team';
+      }
+    }
+
+    async function addMember(teamId) {
+      let userOptions = {};
+      try {
+        const res = await UserAPI.getAll(0, 200);
+        const users = res.data.data?.content || res.data.data || [];
+        users.forEach(u => userOptions[u.id] = u.fullName || u.email);
+      } catch {
+        toast('Failed to load users', 'error');
+        return;
+      }
+      const { value: userId } = await Swal.fire({
+        title: 'Add Member',
+        input: 'select',
+        inputOptions: userOptions,
+        inputPlaceholder: 'Select a user...',
+        confirmButtonText: 'Add',
+        showCancelButton: true,
+        confirmButtonColor: '#2563EB',
+        cancelButtonColor: '#94A3B8',
+        borderRadius: '16px',
+      });
+      if (!userId) return;
+      try {
+        await TeamAPI.addMember(teamId, userId, 'TEAM_MEMBER');
+        toast('Member added', 'success');
+        loadMembers(teamId);
+      } catch (e) {
+        toast('Failed to add member', 'error');
+      }
+    }
+
+    window.deleteTeam = async function(id) {
+      const ok = await confirmDialog('Delete Team', 'This action cannot be undone.', 'Delete');
+      if (!ok) return;
+      try {
+        await TeamAPI.delete(id);
+        toast('Team deleted', 'success');
+        loadTeams();
+      } catch (e) { toast('Failed to delete team', 'error'); }
+    };
+
+    window.removeMember = async function(teamId, userId) {
+      try {
+        await TeamAPI.removeMember(teamId, userId);
+        toast('Member removed', 'success');
+        loadMembers(teamId);
+      } catch (e) { toast('Failed to remove member', 'error'); }
+    };
+
+    async function init() {
+      await loadComponent('../components/navbar.html', 'navbarContainer');
+      await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
+      await loadComponent('../components/modals.html', 'modalContainer');
+      loadTeams();
+        document.getElementById('newTeamBtn').addEventListener('click', () => {
+          document.getElementById('teamName').value = '';
+          document.getElementById('teamDesc').value = '';
+          document.getElementById('teamNameErr').textContent = '';
+          document.getElementById('teamSaveBtn').onclick = saveTeam;
+          loadUserOptions();
+          openModal('modalCreateTeam');
+        });
+    }
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <link rel="stylesheet" href="../assets/css/forms.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebarContainer"></div>
+    <div class="main-content">
+      <div id="navbarContainer"></div>
+      <div class="page-body">
+        <div class="section-header">
+          <div>
+            <h2>Settings</h2>
+            <p>Manage your account preferences</p>
+          </div>
+        </div>
+        <div class="settings-layout">
+          <nav class="settings-nav">
+            <div class="settings-nav-item active" data-panel="profile"><i class="fa-solid fa-user"></i> Profile</div>
+            <div class="settings-nav-item" data-panel="password"><i class="fa-solid fa-lock"></i> Password</div>
+            <div class="settings-nav-item" data-panel="appearance"><i class="fa-solid fa-palette"></i> Appearance</div>
+            <div class="settings-nav-item" data-panel="notif-prefs"><i class="fa-solid fa-bell"></i> Notifications</div>
+            <div class="settings-nav-item" style="color:var(--danger)" id="logoutBtn"><i class="fa-solid fa-sign-out-alt"></i> Logout</div>
+          </nav>
+          <div>
+            <div class="settings-panel active" id="panel-profile">
+              <div class="avatar-uploader">
+                <div class="avatar-preview" id="profileAvatarPreview">U</div>
+                <div class="avatar-upload-info">
+                  <h4>Profile Picture</h4>
+                  <p>PNG or JPG. Max 2MB.</p>
+                  <button class="btn btn-outline btn-sm file-input-wrapper">
+                    <i class="fa-solid fa-camera"></i> Upload
+                    <input type="file" accept="image/*" id="avatarUpload">
+                  </button>
+                </div>
+              </div>
+              <div class="form-grid form-grid-2" style="max-width:600px">
+                <div class="form-group">
+                  <label class="form-label">Full Name</label>
+                  <input class="form-input" id="settingsName" placeholder="Your name">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email</label>
+                  <input class="form-input" id="settingsEmail" placeholder="Email" disabled style="opacity:0.6">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone</label>
+                  <input class="form-input" id="settingsPhone" placeholder="Phone number">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Role</label>
+                  <input class="form-input" id="settingsRole" disabled style="opacity:0.6">
+                </div>
+              </div>
+              <button class="btn btn-primary mt-4" id="saveProfileBtn">Save Changes</button>
+            </div>
+
+            <div class="settings-panel" id="panel-password">
+              <div class="form-grid" style="max-width:400px">
+                <div class="form-group">
+                  <label class="form-label">Current Password</label>
+                  <input class="form-input" type="password" id="oldPass" placeholder="Enter current password">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">New Password <span class="text-xs text-muted">Min. 6 characters</span></label>
+                  <input class="form-input" type="password" id="newPass" placeholder="Enter new password">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Confirm New Password</label>
+                  <input class="form-input" type="password" id="confirmNewPass" placeholder="Repeat new password">
+                </div>
+              </div>
+              <button class="btn btn-primary mt-4" id="changePassBtn">Update Password</button>
+            </div>
+
+            <div class="settings-panel" id="panel-appearance">
+              <h4 style="margin-bottom:12px">Theme</h4>
+              <div class="theme-options">
+                <div class="theme-option selected" data-theme-val="light">
+                  <div class="theme-preview" style="background:#fff;border:1px solid #ddd"></div>
+                  <div class="theme-name">Light</div>
+                </div>
+                <div class="theme-option" data-theme-val="dark">
+                  <div class="theme-preview" style="background:#1E293B"></div>
+                  <div class="theme-name">Dark</div>
+                </div>
+                <div class="theme-option" data-theme-val="system">
+                  <div class="theme-preview" style="background:linear-gradient(135deg,#fff 50%,#1E293B 50%)"></div>
+                  <div class="theme-name">System</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-panel" id="panel-notif-prefs">
+              <p class="text-muted mb-4">Choose what notifications you receive.</p>
+              <div class="form-grid" style="max-width:400px">
+                <label class="checkbox-item"><input type="checkbox" checked> Task assigned to me</label>
+                <label class="checkbox-item"><input type="checkbox" checked> Task deadline reminders</label>
+                <label class="checkbox-item"><input type="checkbox" checked> New messages</label>
+                <label class="checkbox-item"><input type="checkbox"> Weekly report summary</label>
+              </div>
+              <button class="btn btn-primary mt-4">Save Preferences</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { UserAPI } from '../assets/js/api.js';
+    import { Theme, Session, authGuard, initSidebar, toast, getInitials, getAvatarColor } from '../assets/js/utils.js';
+
+    if (!authGuard()) throw new Error('Not authenticated');
+    Theme.init();
+    const page = 'settings';
+
+    async function loadComponent(url, containerId, cb) {
+      const res = await fetch(url);
+      document.getElementById(containerId).innerHTML = await res.text();
+      if (cb) cb();
+    }
+
+    function loadUserProfile() {
+      const user = Session.getUser();
+      if (!user) return;
+      document.getElementById('settingsName').value = user.fullName || '';
+      document.getElementById('settingsEmail').value = user.email || '';
+      document.getElementById('settingsPhone').value = user.phone || '';
+      document.getElementById('settingsRole').value = (user.roles?.[0] || '').replace(/_/g, ' ');
+      const preview = document.getElementById('profileAvatarPreview');
+      preview.innerHTML = getInitials(user.fullName || user.email || 'U');
+      preview.style.background = getAvatarColor(user.fullName || user.email);
+    }
+
+    document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+      const name = document.getElementById('settingsName').value.trim();
+      const phone = document.getElementById('settingsPhone').value.trim();
+      try {
+        const user = Session.getUser();
+        await UserAPI.updateUser(user.id, name, phone, user.profileImage);
+        const updated = { ...user, fullName: name, phone };
+        Session.set(Session.getToken(), Session.getRefresh(), updated);
+        toast('Profile updated', 'success');
+        initSidebar(page);
+      } catch (e) {
+        toast('Failed to update profile', 'error');
+      }
+    });
+
+    document.getElementById('changePassBtn').addEventListener('click', async () => {
+      const old = document.getElementById('oldPass').value;
+      const newP = document.getElementById('newPass').value;
+      const confirm = document.getElementById('confirmNewPass').value;
+      if (!old || !newP) { toast('Fill all password fields', 'warning'); return; }
+      if (newP !== confirm) { toast('Passwords do not match', 'error'); return; }
+      if (newP.length < 6) { toast('Password must be at least 6 characters', 'warning'); return; }
+      try {
+        const user = Session.getUser();
+        await UserAPI.changePassword(user.id, old, newP);
+        toast('Password updated successfully', 'success');
+        document.querySelectorAll('#panel-password .form-input').forEach(i => i.value = '');
+      } catch (e) {
+        toast(e.response?.data?.message || 'Failed to update password', 'error');
+      }
+    });
+
+    document.querySelectorAll('.theme-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        const val = opt.dataset.themeVal;
+        if (val === 'system') {
+          const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          Theme.set(dark ? 'dark' : 'light');
+        } else {
+          Theme.set(val);
+        }
+      });
+    });
+
+    document.querySelectorAll('.settings-nav-item[data-panel]').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.settings-nav-item').forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+        document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(`panel-${item.dataset.panel}`).classList.add('active');
+      });
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      Session.clear();
+      window.location.href = 'login.html';
+    });
+
+    document.getElementById('avatarUpload').addEventListener('change', function() {
+      if (this.files?.[0]) {
+        toast('Avatar upload coming soon with backend integration', 'info');
+      }
+    });
+
+    async function init() {
+      await loadComponent('../components/navbar.html', 'navbarContainer');
+      await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
+      loadUserProfile();
+    }
+    init();
+  </script>
+</body>
+</html>

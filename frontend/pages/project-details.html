@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Details — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <link rel="stylesheet" href="../assets/css/forms.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebarContainer"></div>
+    <div class="main-content">
+      <div id="navbarContainer"></div>
+      <div class="page-body">
+        <a href="projects.html" class="btn btn-ghost btn-sm mb-4"><i class="fa-solid fa-arrow-left"></i> Back to Projects</a>
+        <div id="projectDetail">
+          <div class="skeleton skeleton-card" style="height:200px"></div>
+        </div>
+        <div class="grid grid-2 mb-6 mt-6">
+          <div class="card">
+            <div class="card-header"><h3>Milestones</h3></div>
+            <div class="card-body" id="milestoneList">
+              <div class="text-muted text-sm">Loading...</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Files</h3></div>
+            <div class="card-body" id="fileList">
+              <div class="text-muted text-sm">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { ProjectAPI, TaskAPI, MilestoneAPI, FileAPI } from '../assets/js/api.js';
+    import { Theme, Session, authGuard, initSidebar, statusBadge, priorityBadge, DateHelper, toast, formatSize, fileIconFA } from '../assets/js/utils.js';
+
+    if (!authGuard()) throw new Error('Not authenticated');
+    Theme.init();
+    const page = 'projects';
+
+    async function loadComponent(url, containerId, cb) {
+      const res = await fetch(url);
+      document.getElementById(containerId).innerHTML = await res.text();
+      if (cb) cb();
+    }
+
+    function getProjectId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
+    }
+
+    async function loadProject() {
+      const id = getProjectId();
+      if (!id) { document.getElementById('projectDetail').innerHTML = '<div class="text-muted">No project ID specified</div>'; return; }
+      try {
+        const res = await ProjectAPI.getById(id);
+        const p = res.data.data;
+        document.getElementById('projectDetail').innerHTML = `
+          <div class="card">
+            <div class="card-body">
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <h2 style="font-family:var(--font-display);font-size:24px;font-weight:800">${p.title || 'Untitled'}</h2>
+                  <p style="color:var(--text-secondary);margin-top:4px">${p.description || 'No description'}</p>
+                </div>
+                ${statusBadge(p.status)}
+              </div>
+              <div class="project-progress-wrap mb-4">
+                <div class="project-progress-label"><span>Progress</span><span>${Math.round(p.progress || 0)}%</span></div>
+                <div class="progress"><div class="progress-bar ${(p.progress || 0) >= 100 ? 'success' : 'gradient'}" style="width:${p.progress || 0}%"></div></div>
+              </div>
+              <div class="flex gap-6 text-sm">
+                <span><strong>Priority:</strong> ${priorityBadge(p.priority)}</span>
+                <span><strong>Start:</strong> ${DateHelper.format(p.startDate)}</span>
+                <span><strong>End:</strong> ${DateHelper.format(p.endDate)}</span>
+                <span><strong>Team:</strong> ${p.teamName || 'Not assigned'}</span>
+              </div>
+            </div>
+          </div>`;
+      } catch (e) {
+        document.getElementById('projectDetail').innerHTML = '<div class="text-muted">Failed to load project</div>';
+      }
+    }
+
+    async function loadMilestones() {
+      const id = getProjectId();
+      if (!id) return;
+      try {
+        const res = await MilestoneAPI.getByProject(id);
+        const milestones = res.data.data?.content || res.data.data || [];
+        const list = document.getElementById('milestoneList');
+        if (!milestones.length) {
+          list.innerHTML = '<div class="text-muted text-sm">No milestones yet</div>';
+          return;
+        }
+        list.innerHTML = milestones.map(m => `
+          <div class="milestone-item">
+            <div class="milestone-status ${m.status === 'COMPLETED' ? 'done' : 'pending'}">${m.status === 'COMPLETED' ? '<i class="fa-solid fa-check"></i>' : ''}</div>
+            <div class="milestone-info">
+              <div class="milestone-title">${m.title || 'Milestone'}</div>
+              <div class="milestone-date">${DateHelper.format(m.deadline)}</div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('milestoneList').innerHTML = '<div class="text-muted text-sm">Failed to load milestones</div>';
+      }
+    }
+
+    async function loadFiles() {
+      const id = getProjectId();
+      if (!id) return;
+      try {
+        const res = await FileAPI.getByProject(id);
+        const files = res.data.data?.content || res.data.data || [];
+        const list = document.getElementById('fileList');
+        if (!files.length) {
+          list.innerHTML = '<div class="text-muted text-sm">No files uploaded</div>';
+          return;
+        }
+        list.innerHTML = files.map(f => `
+          <div class="file-card">
+            <div class="file-icon-wrap ${fileIconFA(f.fileName || f.name).includes('image') ? 'img' : (f.fileName || f.name).endsWith('.pdf') ? 'pdf' : 'other'}">
+              <i class="${fileIconFA(f.fileName || f.name)}"></i>
+            </div>
+            <div class="file-info">
+              <div class="file-name">${f.fileName || f.name || 'File'}</div>
+              <div class="file-meta">${formatSize(f.size)} - ${DateHelper.format(f.uploadedAt)}</div>
+            </div>
+            <div class="file-actions">
+              <a class="btn btn-sm btn-ghost" href="${FileAPI.download(f.id)}" target="_blank"><i class="fa-solid fa-download"></i></a>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('fileList').innerHTML = '<div class="text-muted text-sm">Failed to load files</div>';
+      }
+    }
+
+    async function init() {
+      await loadComponent('../components/navbar.html', 'navbarContainer');
+      await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
+      loadProject();
+      loadMilestones();
+      loadFiles();
+    }
+    init();
+  </script>
+</body>
+</html>

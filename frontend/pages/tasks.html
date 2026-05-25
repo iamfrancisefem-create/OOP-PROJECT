@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tasks — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <link rel="stylesheet" href="../assets/css/forms.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebarContainer"></div>
+    <div class="main-content">
+      <div id="navbarContainer"></div>
+      <div class="page-body">
+        <div class="section-header">
+          <div>
+            <h2>Tasks</h2>
+            <p>Drag and drop to update task status</p>
+          </div>
+          <div class="flex gap-3">
+            <div class="search-bar">
+              <i class="fa-solid fa-search"></i>
+              <input type="text" id="taskSearch" placeholder="Search tasks...">
+            </div>
+            <div class="custom-select-wrapper" style="min-width:160px">
+              <select class="form-select" id="projectFilter">
+                <option value="">All Projects</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="newTaskBtn"><i class="fa-solid fa-plus"></i> New Task</button>
+          </div>
+        </div>
+        <div class="kanban-board" id="kanbanBoard">
+          <div class="kanban-column col-todo">
+            <div class="kanban-column-header">
+              <span class="column-label"><span class="column-dot"></span> To Do</span>
+              <span class="column-count" id="todoCount">0</span>
+            </div>
+            <div class="kanban-tasks" data-status="TODO" id="todoList"></div>
+            <button class="add-task-btn" data-status="TODO"><i class="fa-solid fa-plus"></i> Add Task</button>
+          </div>
+          <div class="kanban-column col-inprog">
+            <div class="kanban-column-header">
+              <span class="column-label"><span class="column-dot"></span> In Progress</span>
+              <span class="column-count" id="inprogCount">0</span>
+            </div>
+            <div class="kanban-tasks" data-status="IN_PROGRESS" id="inprogList"></div>
+            <button class="add-task-btn" data-status="IN_PROGRESS"><i class="fa-solid fa-plus"></i> Add Task</button>
+          </div>
+          <div class="kanban-column col-testing">
+            <div class="kanban-column-header">
+              <span class="column-label"><span class="column-dot"></span> Testing</span>
+              <span class="column-count" id="testingCount">0</span>
+            </div>
+            <div class="kanban-tasks" data-status="TESTING" id="testingList"></div>
+            <button class="add-task-btn" data-status="TESTING"><i class="fa-solid fa-plus"></i> Add Task</button>
+          </div>
+          <div class="kanban-column col-done">
+            <div class="kanban-column-header">
+              <span class="column-label"><span class="column-dot"></span> Done</span>
+              <span class="column-count" id="doneCount">0</span>
+            </div>
+            <div class="kanban-tasks" data-status="DONE" id="doneList"></div>
+            <button class="add-task-btn" data-status="DONE"><i class="fa-solid fa-plus"></i> Add Task</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="modalContainer"></div>
+  <script type="module">
+    import { TaskAPI, ProjectAPI, UserAPI } from '../assets/js/api.js';
+    import { Theme, Session, authGuard, initSidebar, statusBadge, priorityBadge, DateHelper, toast, closeModal, openModal, debounce } from '../assets/js/utils.js';
+
+    if (!authGuard()) throw new Error('Not authenticated');
+    Theme.init();
+    const page = 'tasks';
+    let allTasks = [];
+
+    async function loadComponent(url, containerId, cb) {
+      const res = await fetch(url);
+      document.getElementById(containerId).innerHTML = await res.text();
+      if (cb) cb();
+    }
+
+    function renderKanban(tasks) {
+      const todo = tasks.filter(t => t.status === 'TODO');
+      const inprog = tasks.filter(t => t.status === 'IN_PROGRESS');
+      const testing = tasks.filter(t => t.status === 'TESTING');
+      const done = tasks.filter(t => t.status === 'DONE');
+
+      document.getElementById('todoCount').textContent = todo.length;
+      document.getElementById('inprogCount').textContent = inprog.length;
+      document.getElementById('testingCount').textContent = testing.length;
+      document.getElementById('doneCount').textContent = done.length;
+
+      const renderList = (items, listId) => {
+        const list = document.getElementById(listId);
+        if (!items.length) {
+          list.innerHTML = `<div class="empty-state" style="padding:16px"><p class="text-xs text-muted">No tasks</p></div>`;
+          return;
+        }
+        list.innerHTML = items.map(t => {
+          const deadlineClass = DateHelper.isOverdue(t.deadline) ? 'overdue' : DateHelper.isSoon(t.deadline) ? 'soon' : '';
+          return `<div class="task-card" draggable="true" data-id="${t.id}" data-status="${t.status}">
+            <div class="task-card-top">
+              <div class="task-card-title">${t.title || 'Untitled'}</div>
+              ${priorityBadge(t.priority)}
+            </div>
+            <div class="task-card-desc">${t.description || ''}</div>
+            <div class="task-card-footer">
+              <div class="task-card-meta">
+                <div class="task-deadline ${deadlineClass}"><i class="fa-regular fa-calendar"></i> ${DateHelper.format(t.deadline)}</div>
+              </div>
+              <div class="avatar-group">
+                ${t.assignedTo ? `<div class="avatar-sm" style="background:var(--primary)" title="${t.assignedToName || 'Assigned'}">${(t.assignedToName || 'U')[0]}</div>` : ''}
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+
+        list.querySelectorAll('.task-card').forEach(card => {
+          card.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text/plain', card.dataset.id);
+            card.classList.add('dragging');
+          });
+          card.addEventListener('dragend', () => card.classList.remove('dragging'));
+          card.addEventListener('click', () => {
+            toast('Task details: ' + (card.querySelector('.task-card-title')?.textContent || 'Task'), 'info');
+          });
+        });
+      };
+
+      renderList(todo, 'todoList');
+      renderList(inprog, 'inprogList');
+      renderList(testing, 'testingList');
+      renderList(done, 'doneList');
+    }
+
+    function setupDropZones() {
+      document.querySelectorAll('.kanban-tasks').forEach(zone => {
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', async e => {
+          e.preventDefault();
+          zone.classList.remove('drag-over');
+          const taskId = e.dataTransfer.getData('text/plain');
+          const newStatus = zone.dataset.status;
+          if (!taskId || !newStatus) return;
+          try {
+            await TaskAPI.updateStatus(taskId, newStatus);
+            const task = allTasks.find(t => t.id == taskId);
+            if (task) task.status = newStatus;
+            renderKanban(allTasks);
+            toast('Task status updated', 'success');
+          } catch (err) {
+            toast('Failed to update task', 'error');
+          }
+        });
+      });
+    }
+
+    async function loadTasks(projectId = '') {
+      try {
+        const res = projectId ? await TaskAPI.getByProject(projectId) : await TaskAPI.getAll(0, 100);
+        allTasks = res.data.data?.content || res.data.data || [];
+        renderKanban(allTasks);
+      } catch (e) {
+        document.querySelectorAll('.kanban-tasks').forEach(l => l.innerHTML = '<div class="text-muted text-sm">Failed to load tasks</div>');
+      }
+    }
+
+    async function loadProjectFilter() {
+      try {
+        const res = await ProjectAPI.getAll(0, 100);
+        const projects = res.data.data?.content || res.data.data || [];
+        const sel = document.getElementById('projectFilter');
+        sel.innerHTML = '<option value="">All Projects</option>' + projects.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+        sel.addEventListener('change', e => loadTasks(e.target.value));
+      } catch (e) {}
+    }
+
+    async function loadAssigneeOptions() {
+      try {
+        const res = await UserAPI.getAll(0, 100);
+        const users = res.data.data?.content || res.data.data || [];
+        const sel = document.getElementById('taskAssignee');
+        sel.innerHTML = '<option value="">Unassigned</option>' + users.map(u => `<option value="${u.id}">${u.fullName || u.email}</option>`).join('');
+      } catch (e) {}
+    }
+
+    async function loadProjectOptions() {
+      try {
+        const res = await ProjectAPI.getAll(0, 100);
+        const projects = res.data.data?.content || res.data.data || [];
+        const sel = document.getElementById('taskProject');
+        sel.innerHTML = '<option value="">Select project</option>' + projects.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+      } catch (e) {}
+    }
+
+    async function saveTask() {
+      const title = document.getElementById('taskTitle').value.trim();
+      if (!title) { document.getElementById('taskTitleErr').textContent = 'Title is required'; return; }
+      const projectId = document.getElementById('taskProject').value;
+      if (!projectId) { toast('Please select a project', 'warning'); return; }
+      const data = {
+        title,
+        description: document.getElementById('taskDesc').value.trim(),
+        status: 'TODO',
+        priority: document.getElementById('taskPriority').value,
+        deadline: document.getElementById('taskDeadline').value || null,
+        assignedToId: document.getElementById('taskAssignee').value || null,
+        projectId,
+      };
+      try {
+        const btn = document.getElementById('taskSaveBtn');
+        btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+        await TaskAPI.create(data);
+        toast('Task created successfully', 'success');
+        closeModal('modalCreateTask');
+        loadTasks(document.getElementById('projectFilter').value);
+      } catch (e) {
+        toast(e.response?.data?.message || 'Failed to create task', 'error');
+      } finally {
+        const btn = document.getElementById('taskSaveBtn');
+        btn.disabled = false; btn.innerHTML = 'Create Task';
+      }
+    }
+
+    document.getElementById('taskSearch').addEventListener('input', debounce(e => {
+      const q = e.target.value.toLowerCase();
+      if (!q) { renderKanban(allTasks); return; }
+      const filtered = allTasks.filter(t => (t.title || '').toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q));
+      renderKanban(filtered);
+    }, 300));
+
+    async function init() {
+      await loadComponent('../components/navbar.html', 'navbarContainer');
+      await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
+      await loadComponent('../components/modals.html', 'modalContainer');
+      loadTasks();
+      loadProjectFilter();
+      setupDropZones();
+      document.getElementById('newTaskBtn').addEventListener('click', () => {
+        loadAssigneeOptions();
+        loadProjectOptions();
+        document.getElementById('taskSaveBtn').onclick = saveTask;
+        document.querySelectorAll('#modalCreateTask .form-input').forEach(i => i.value = '');
+        openModal('modalCreateTask');
+      });
+      document.querySelectorAll('.add-task-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          loadAssigneeOptions();
+          loadProjectOptions();
+          document.getElementById('taskSaveBtn').onclick = saveTask;
+          document.querySelectorAll('#modalCreateTask .form-input').forEach(i => i.value = '');
+          openModal('modalCreateTask');
+        });
+      });
+    }
+    init();
+  </script>
+</body>
+</html>

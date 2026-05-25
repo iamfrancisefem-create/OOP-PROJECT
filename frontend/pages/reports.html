@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <link rel="stylesheet" href="../assets/css/forms.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebarContainer"></div>
+    <div class="main-content">
+      <div id="navbarContainer"></div>
+      <div class="page-body">
+        <div class="section-header">
+          <div>
+            <h2>Reports</h2>
+            <p>Generate project and performance reports</p>
+          </div>
+        </div>
+
+        <div class="generate-card mb-6">
+          <h3>Generate New Report</h3>
+          <p>Create comprehensive reports for any project with detailed analytics.</p>
+          <div class="flex gap-3" style="flex-wrap:wrap">
+            <div class="custom-select-wrapper" style="min-width:220px">
+              <select class="form-select" id="reportProject">
+                <option value="">Select a project...</option>
+              </select>
+            </div>
+            <div class="custom-select-wrapper" style="min-width:160px">
+              <select class="form-select" id="reportType">
+                <option value="PROGRESS">Progress Report</option>
+                <option value="TASK_COMPLETION">Task Completion</option>
+                <option value="TEAM_PERFORMANCE">Team Performance</option>
+                <option value="PRODUCTIVITY">Productivity</option>
+              </select>
+            </div>
+            <button class="btn btn-white" id="generateReportBtn"><i class="fa-solid fa-file-export"></i> Generate</button>
+          </div>
+        </div>
+
+        <div class="chart-grid mb-6">
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <div><div class="chart-title">Task Overview</div><div class="chart-sub">Completion status</div></div>
+            </div>
+            <div class="chart-card-body"><canvas id="reportPieChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <div><div class="chart-title">Team Performance</div><div class="chart-sub">Tasks per member</div></div>
+            </div>
+            <div class="chart-card-body"><canvas id="reportBarChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <h2 style="font-size:18px">Recent Reports</h2>
+        </div>
+        <div id="reportList" class="grid grid-auto">
+          <div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-icon"><i class="fa-solid fa-file"></i></div>
+            <h4>No reports generated yet</h4>
+            <p>Generate a report to see it here.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { ReportAPI, ProjectAPI, TaskAPI } from '../assets/js/api.js';
+    import { Theme, Session, authGuard, initSidebar, DateHelper, toast } from '../assets/js/utils.js';
+    if (!authGuard()) throw new Error('Not authenticated');
+    Theme.init();
+    const page = 'reports';
+
+    async function loadComponent(url, containerId, cb) {
+      const res = await fetch(url);
+      document.getElementById(containerId).innerHTML = await res.text();
+      if (cb) cb();
+    }
+
+    async function loadProjectOptions() {
+      try {
+        const res = await ProjectAPI.getAll(0, 100);
+        const projects = res.data.data?.content || res.data.data || [];
+        const sel = document.getElementById('reportProject');
+        sel.innerHTML = '<option value="">Select a project...</option>' + projects.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+      } catch (e) {}
+    }
+
+    async function generateReport() {
+      const projectId = document.getElementById('reportProject').value;
+      const reportType = document.getElementById('reportType').value;
+      if (!projectId) { toast('Please select a project', 'warning'); return; }
+      try {
+        const btn = document.getElementById('generateReportBtn');
+        btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+        const res = await ReportAPI.generate(projectId, reportType);
+        toast('Report generated successfully!', 'success');
+        loadReports();
+      } catch (e) {
+        toast('Failed to generate report', 'error');
+      } finally {
+        const btn = document.getElementById('generateReportBtn');
+        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-file-export"></i> Generate';
+      }
+    }
+
+    async function loadReports() {
+      const container = document.getElementById('reportList');
+      try {
+        const res = await ReportAPI.getByProject('', 0);
+        const reports = res.data.data?.content || res.data.data || [];
+        if (!reports.length) {
+          container.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon"><i class="fa-solid fa-file"></i></div><h4>No reports generated yet</h4><p>Generate a report to see it here.</p></div>`;
+          return;
+        }
+        container.innerHTML = reports.map(r => `
+          <div class="report-card">
+            <div class="report-icon" style="background:var(--primary-light);color:var(--primary)"><i class="fa-solid fa-file-lines"></i></div>
+            <div class="report-info">
+              <h4>${r.reportType || 'Report'} — ${r.projectName || 'Project'}</h4>
+              <p>Generated by ${r.generatedByName || 'System'}</p>
+              <div class="report-meta">
+                <span><i class="fa-regular fa-calendar"></i> ${DateHelper.format(r.createdAt)}</span>
+                <span><i class="fa-solid fa-download"></i> <a href="${ReportAPI.download(r.id)}" style="color:var(--primary)">Download</a></span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {}
+    }
+
+    async function loadCharts() {
+      try {
+        const res = await TaskAPI.getAll(0, 100);
+        const tasks = res.data.data?.content || res.data.data || [];
+        const todo = tasks.filter(t => t.status === 'TODO').length;
+        const inprog = tasks.filter(t => t.status === 'IN_PROGRESS').length;
+        const testing = tasks.filter(t => t.status === 'TESTING').length;
+        const done = tasks.filter(t => t.status === 'DONE').length;
+
+        new Chart(document.getElementById('reportPieChart'), {
+          type: 'doughnut',
+          data: {
+            labels: ['To Do', 'In Progress', 'Testing', 'Done'],
+            datasets: [{ data: [todo, inprog, testing, done], backgroundColor: ['#94A3B8', '#2563EB', '#F59E0B', '#10B981'], borderWidth: 0 }],
+          },
+          options: { responsive: true, plugins: { legend: { position: 'bottom' } } },
+        });
+
+        new Chart(document.getElementById('reportBarChart'), {
+          type: 'bar',
+          data: {
+            labels: ['Team A', 'Team B', 'Team C', 'Team D'],
+            datasets: [{ label: 'Completed Tasks', data: [12, 19, 8, 15], backgroundColor: '#2563EB', borderRadius: 6 }],
+          },
+          options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+        });
+      } catch (e) {}
+    }
+
+    async function init() {
+      await loadComponent('../components/navbar.html', 'navbarContainer');
+      await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
+      loadProjectOptions();
+      loadReports();
+      loadCharts();
+      document.getElementById('generateReportBtn').addEventListener('click', generateReport);
+    }
+    init();
+  </script>
+</body>
+</html>
