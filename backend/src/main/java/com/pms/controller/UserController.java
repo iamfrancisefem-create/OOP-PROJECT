@@ -37,7 +37,6 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/role")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<UserResponse>> updateUserRole(
             @PathVariable Long id,
             @Valid @RequestBody UpdateRoleRequest request
