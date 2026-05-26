@@ -67,9 +67,19 @@ public class AuthServiceImpl implements AuthService {
         user.setEnabled(autoVerify);
         user.setEmailVerified(autoVerify);
 
-        Role userRole = roleRepository.findByName(RoleName.TEAM_MEMBER)
+        RoleName requestedRole = RoleName.TEAM_MEMBER;
+        if (request.getRole() != null && !request.getRole().isBlank()) {
+            try {
+                RoleName parsed = RoleName.valueOf(request.getRole().toUpperCase());
+                if (parsed != RoleName.ADMIN) {
+                    requestedRole = parsed;
+                }
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        Role userRole = roleRepository.findByName(requestedRole)
                 .orElseGet(() -> {
-                    Role newRole = Role.builder().name(RoleName.TEAM_MEMBER).build();
+                    Role newRole = Role.builder().name(requestedRole).build();
                     return roleRepository.save(newRole);
                 });
 

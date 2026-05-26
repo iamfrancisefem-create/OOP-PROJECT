@@ -69,6 +69,18 @@
             </div>
           </div>
           <div class="form-group mb-4">
+            <label class="form-label">Role <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-user-tag input-icon"></i>
+              <select class="form-input" id="regRole" required>
+                <option value="TEAM_MEMBER" selected>Team Member</option>
+                <option value="PROJECT_MANAGER">Project Manager</option>
+                <option value="TEAM_LEADER">Team Leader</option>
+                <option value="PRODUCT_OWNER">Product Owner</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group mb-4">
             <label class="form-label">Password <span class="required">*</span></label>
             <div class="input-wrapper">
               <i class="fa-solid fa-lock input-icon"></i>
@@ -141,7 +153,7 @@
           email: document.getElementById('regEmail').value.trim(),
           phone: document.getElementById('regPhone').value.trim(),
           password: pwInput.value,
-
+          role: document.getElementById('regRole').value,
         });
         const { token, refreshToken, id, email, fullName, phone, roles } = res.data.data;
         Session.set(token, refreshToken, { id, email, fullName, phone, roles });
