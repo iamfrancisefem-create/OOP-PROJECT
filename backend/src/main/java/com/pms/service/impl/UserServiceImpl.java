@@ -80,7 +80,10 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
 
         Role role = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new BadRequestException("Role not found: " + roleName));
+                .orElseGet(() -> {
+                    Role newRole = Role.builder().name(roleName).build();
+                    return roleRepository.save(newRole);
+                });
 
         user.getRoles().clear();
         user.getRoles().add(role);
