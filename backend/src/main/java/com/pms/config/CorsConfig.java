@@ -24,7 +24,7 @@ public class CorsConfig {
                 .map(String::trim)
                 .toList();
         
-        corsConfiguration.setAllowedOrigins(origins);
+        corsConfiguration.setAllowedOriginPatterns(origins);
         corsConfiguration.setAllowedHeaders(Arrays.asList(
                 "Origin", "Access-Control-Allow-Origin", "Content-Type",
                 "Accept", "Authorization", "Origin, Accept", "X-Requested-With",
