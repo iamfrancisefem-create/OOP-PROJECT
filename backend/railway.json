@@ -1,11 +1,9 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "mvn clean package -DskipTests"
+    "builder": "DOCKERFILE"
   },
   "deploy": {
-    "startCommand": "java -jar target/project-management-system-1.0.0.jar --spring.profiles.active=prod",
     "healthcheckPath": "/swagger-ui.html",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
