@@ -58,10 +58,6 @@
     import { Theme, Session, authGuard, initSidebar, toast, confirmDialog, renderPagination, ROLES } from '../assets/js/utils.js';
 
     if (!authGuard()) throw new Error('Not authenticated');
-    if (!Session.hasRole(ROLES.ADMIN)) {
-      window.location.href = 'dashboard.html';
-      throw new Error('Access denied');
-    }
     Theme.init();
     const page = 'user-management';
     let currentPage = 0, totalPages = 0;
