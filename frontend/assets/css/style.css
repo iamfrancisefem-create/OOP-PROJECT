@@ -105,6 +105,78 @@ a:hover {
   color: var(--primary-hover);
 }
 
+/* Premium UI Enhancements */
+
+/* Glass card wrapper for premium panels */
+.glass-card {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glass);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+[data-theme="dark"] .glass-card {
+  background: rgba(17,24,39,0.7);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Role select styling */
+.role-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%236366f1' d='M31.5 192h257c28.3 0 42.4 34.3 53.9 6.6 9.4 4.5 22.2-5 28.9L184.5 428c-7.5 5.5-17.5 5.5-25 0L11.5 274.8c-9.4-6.7-11.5-19.5-5-28.9C30.5 226.3 31.5 192 31.5 192z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+}
+.role-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+/* Page load fade-in animation */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-body {
+  animation: fadeInUp var(--transition-slow) ease both;
+}
+
+/* Table row hover enhancement */
+.table tbody tr:hover {
+  background: var(--primary-light);
+  transform: translateX(4px);
+}
+[data-theme="dark"] .table tbody tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+/* Adjust alert banner styling for premium look */
+.alert-banner {
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-5);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.alert-banner .fa-solid {
+  font-size: 16px;
+}
+
 /* Glassmorphism Utilities */
 .glass {
   background: rgba(255, 255, 255, 0.7);
