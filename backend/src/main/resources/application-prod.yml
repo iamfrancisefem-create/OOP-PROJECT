@@ -10,7 +10,7 @@ server:
 spring:
   jpa:
     hibernate:
-      ddl-auto: validate              # Never auto-modify production schema
+      ddl-auto: none                   # Flyway manages schema; skip Hibernate validation
     show-sql: false
 
   flyway:
