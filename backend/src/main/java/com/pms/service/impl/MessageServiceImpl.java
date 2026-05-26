@@ -11,6 +11,7 @@ import com.pms.repository.MessageRepository;
 import com.pms.repository.UserRepository;
 import com.pms.service.NotificationService;
 import com.pms.repository.TeamMemberRepository;
+import com.pms.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,7 +47,7 @@ public class MessageServiceImpl implements MessageService {
         // Verify that sender and receiver share at least one common team
         boolean sameTeam = teamMemberRepository.findByUser(sender).stream()
                 .anyMatch(tm -> teamMemberRepository.findByUser(receiver).stream()
-                        .anyMatch(rtm -> rtm.getTeam().getId().equals(tm.getTeam().getId()));
+                        .anyMatch(rtm -> rtm.getTeam().getId().equals(tm.getTeam().getId())));
         if (!sameTeam) {
             throw new com.pms.exception.BadRequestException("Sender and receiver are not in the same team");
         }

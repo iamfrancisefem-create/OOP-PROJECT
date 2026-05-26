@@ -18,6 +18,7 @@ import com.pms.repository.TeamMemberRepository;
 import com.pms.repository.UserRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.pms.entity.User;
 
 @RestController
 @RequestMapping("/api/v1/users")
