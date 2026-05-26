@@ -1,6 +1,7 @@
 package com.pms.scheduler;
 
 import com.pms.entity.Project;
+import com.pms.entity.enums.ProjectStatus;
 import com.pms.entity.enums.ReportType;
 import com.pms.repository.ProjectRepository;
 import com.pms.service.ReportService;
@@ -26,7 +27,7 @@ public class ReportScheduler {
     @Scheduled(cron = "0 0 0 * * SUN")
     public void generateWeeklySummaries() {
         log.info("Report Scheduler started weekly automated report generation...");
-        List<Project> activeProjects = projectRepository.findAll();
+        List<Project> activeProjects = projectRepository.findByStatus(ProjectStatus.ACTIVE);
         
         int count = 0;
         for (Project project : activeProjects) {

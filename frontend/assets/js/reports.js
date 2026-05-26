@@ -31,7 +31,7 @@ export async function generateReport(projectIdEl, typeEl, btnEl, loadCb) {
 export async function loadReports(containerId) {
   const container = document.getElementById(containerId);
   try {
-    const res = await ReportAPI.getByProject('', 0);
+      const res = await ReportAPI.getByProject(projectId || 'all', 0);
     const reports = res.data.data?.content || res.data.data || [];
     if (!reports.length) {
       container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fa-solid fa-file"></i></div><h4>No reports yet</h4><p>Generate a report to see it here.</p></div>`;

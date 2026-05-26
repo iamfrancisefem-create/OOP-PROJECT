@@ -3,7 +3,9 @@ package com.pms.controller;
 import com.pms.dto.response.ApiResponse;
 import com.pms.dto.response.PagedResponse;
 import com.pms.dto.response.MessageResponse;
+import com.pms.dto.request.MessageRequest;
 import com.pms.service.MessageService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -19,10 +21,9 @@ public class MessageController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<MessageResponse>> sendMessage(
-            @RequestParam Long receiverId,
-            @RequestParam String content
+            @Valid @RequestBody MessageRequest request
     ) {
-        MessageResponse response = messageService.sendMessage(receiverId, content);
+        MessageResponse response = messageService.sendMessage(request.getReceiverId(), request.getContent());
         return ResponseEntity.ok(ApiResponse.success("Message sent successfully.", response));
     }
 

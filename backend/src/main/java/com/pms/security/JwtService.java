@@ -26,6 +26,9 @@ public class JwtService {
     @Value("${jwt.refresh-token-expiration}")
     private long refreshExpiration;
 
+    @Value("${jwt.reset-token-expiration:900000}")
+    private long resetExpiration;
+
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -45,6 +48,17 @@ public class JwtService {
 
     public String generateRefreshToken(UserDetails userDetails) {
         return buildToken(new HashMap<>(), userDetails, refreshExpiration);
+    }
+
+    /**
+     * Generates a short-lived token specifically for password reset flows.
+     * This uses a different token type to prevent an auth token from being
+     * reused as a reset token (privilege escalation).
+     */
+    public String generateResetToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("type", "reset");
+        return buildToken(claims, userDetails, resetExpiration);
     }
 
     private String buildToken(

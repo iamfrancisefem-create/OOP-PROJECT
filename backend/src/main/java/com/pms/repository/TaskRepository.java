@@ -3,6 +3,7 @@ package com.pms.repository;
 import com.pms.entity.Project;
 import com.pms.entity.Task;
 import com.pms.entity.User;
+import com.pms.entity.enums.TaskPriority;
 import com.pms.entity.enums.TaskStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     Page<Task> findByProject(Project project, Pageable pageable);
 
+    List<Task> findByProject(Project project);
+
     Page<Task> findByAssignedTo(User user, Pageable pageable);
 
     Page<Task> findByStatus(TaskStatus status, Pageable pageable);
@@ -40,6 +43,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     long countByAssignedToAndStatus(User user, TaskStatus status);
 
     long countByStatus(TaskStatus status);
+
+    long countByPriority(TaskPriority priority);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.assignedTo = :user AND t.status = :status")
+    long countByAssignedToAndStatusQuery(@Param("user") User user, @Param("status") TaskStatus status);
 
     // ---- Overdue / deadline queries ----
 

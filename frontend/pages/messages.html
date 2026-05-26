@@ -152,7 +152,7 @@
             ${!isSelf ? `<div class="msg-avatar">${(m.senderName || 'U')[0].toUpperCase()}</div>` : ''}
             <div class="msg-bubbles">
               <div class="msg-bubble">${m.content || ''}</div>
-              <div class="msg-time">${DateHelper.formatTime ? DateHelper.formatTime(m.sentAt) : new Date(m.sentAt).toLocaleTimeString()} ${isSelf && m.readStatus ? '<span class="msg-read-status"><i class="fa-solid fa-check-double"></i></span>' : ''}</div>
+              <div class="msg-time">${new Date(m.sentAt).toLocaleTimeString()} ${isSelf && m.readStatus ? '<i class="fa-solid fa-check-double msg-read-status"></i>' : ''}</div>
             </div>
           </div>
         `;
@@ -163,20 +163,33 @@
     function connectWebSocket(userId) {
       if (ws) ws.close();
       const token = Session.getToken();
-      ws = new WebSocket(`ws://localhost:8080/ws/chat?token=${token}`);
+      ws = new WebSocket(`ws://localhost:8080/ws/chat`);
+      ws.onopen = () => ws.send(JSON.stringify({ type: 'auth', token }));
       ws.onmessage = event => {
         try {
           const msg = JSON.parse(event.data);
           if (String(msg.senderId) === String(userId) || String(msg.senderId) === String(Session.getUser()?.id)) {
             const container = document.getElementById('chatMessages');
-            container.innerHTML += `
-              <div class="msg-group ${String(msg.senderId) === String(Session.getUser()?.id) ? 'self' : ''}">
-                ${String(msg.senderId) !== String(Session.getUser()?.id) ? `<div class="msg-avatar">${(msg.senderName || 'U')[0]}</div>` : ''}
-                <div class="msg-bubbles">
-                  <div class="msg-bubble">${msg.content}</div>
-                  <div class="msg-time">Just now</div>
-                </div>
-              </div>`;
+            const div = document.createElement('div');
+            div.className = `msg-group ${String(msg.senderId) === String(Session.getUser()?.id) ? 'self' : ''}`;
+            if (String(msg.senderId) !== String(Session.getUser()?.id)) {
+              const avatar = document.createElement('div');
+              avatar.className = 'msg-avatar';
+              avatar.textContent = (msg.senderName || 'U')[0];
+              div.appendChild(avatar);
+            }
+            const bubbles = document.createElement('div');
+            bubbles.className = 'msg-bubbles';
+            const bubble = document.createElement('div');
+            bubble.className = 'msg-bubble';
+            bubble.textContent = msg.content || '';
+            bubbles.appendChild(bubble);
+            const time = document.createElement('div');
+            time.className = 'msg-time';
+            time.textContent = 'Just now';
+            bubbles.appendChild(time);
+            div.appendChild(bubbles);
+            container.appendChild(div);
             container.scrollTop = container.scrollHeight;
           }
         } catch (e) {}
@@ -191,13 +204,20 @@
       try {
         await MessageAPI.send(currentChatUserId, content);
         const container = document.getElementById('chatMessages');
-        container.innerHTML += `
-          <div class="msg-group self">
-            <div class="msg-bubbles">
-              <div class="msg-bubble">${content}</div>
-              <div class="msg-time">Just now</div>
-            </div>
-          </div>`;
+        const div = document.createElement('div');
+        div.className = 'msg-group self';
+        const bubbles = document.createElement('div');
+        bubbles.className = 'msg-bubbles';
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble';
+        bubble.textContent = content;
+        bubbles.appendChild(bubble);
+        const time = document.createElement('div');
+        time.className = 'msg-time';
+        time.textContent = 'Just now';
+        bubbles.appendChild(time);
+        div.appendChild(bubbles);
+        container.appendChild(div);
         container.scrollTop = container.scrollHeight;
       } catch (e) {
         toast('Failed to send message', 'error');

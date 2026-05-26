@@ -53,11 +53,8 @@ public class FileServiceImpl implements FileService {
         String originalName = file.getOriginalFilename();
         
         // Calculate file versioning dynamically for the project
-        List<FileUpload> existingFiles = fileUploadRepository.findAll().stream()
-                .filter(f -> f.getProject() != null 
-                        && f.getProject().getId().equals(projectId) 
-                        && f.getFileName().equals(originalName))
-                .toList();
+        List<FileUpload> existingFiles = fileUploadRepository
+                .findByProjectAndFileNameOrderByVersionDesc(project, originalName);
         
         int version = existingFiles.stream()
                 .mapToInt(FileUpload::getVersion)

@@ -103,4 +103,22 @@ public class MilestoneServiceImpl implements MilestoneService {
         Milestone updatedMilestone = milestoneRepository.save(milestone);
         return milestoneMapper.toResponse(updatedMilestone);
     }
+
+    @Override
+    public PagedResponse<MilestoneResponse> getMilestonesByProjectId(Long projectId, Pageable pageable) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
+        Page<Milestone> milestonesPage = milestoneRepository.findByProject(project, pageable);
+        List<MilestoneResponse> content = milestonesPage.getContent().stream()
+                .map(milestoneMapper::toResponse)
+                .toList();
+        return PagedResponse.<MilestoneResponse>builder()
+                .content(content)
+                .page(milestonesPage.getNumber())
+                .size(milestonesPage.getSize())
+                .totalElements(milestonesPage.getTotalElements())
+                .totalPages(milestonesPage.getTotalPages())
+                .last(milestonesPage.isLast())
+                .build();
+    }
 }

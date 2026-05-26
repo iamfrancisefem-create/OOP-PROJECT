@@ -1,0 +1,12 @@
+{
+  "name": "projectflow",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npx http-server -p 5500 -c-1 --cors"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.6.5",
+    "@capacitor/core": "^7.6.5"
+  }
+}

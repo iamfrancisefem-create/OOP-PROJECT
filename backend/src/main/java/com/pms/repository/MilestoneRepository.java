@@ -3,6 +3,8 @@ package com.pms.repository;
 import com.pms.entity.Milestone;
 import com.pms.entity.Project;
 import com.pms.entity.enums.MilestoneStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,6 +20,8 @@ import java.util.List;
 public interface MilestoneRepository extends JpaRepository<Milestone, Long> {
 
     List<Milestone> findByProject(Project project);
+
+    Page<Milestone> findByProject(Project project, Pageable pageable);
 
     List<Milestone> findByProjectAndStatus(Project project, MilestoneStatus status);
 

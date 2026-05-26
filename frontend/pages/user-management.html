@@ -135,7 +135,7 @@
 
       try {
         const currentUser = Session.getUser();
-        await UserAPI.updateRole(userId, newRole);
+        await UserAPI.updateRole(userId, { role: newRole });
         selectEl.dataset.currentRole = newRole;
         const row = selectEl.closest('tr');
         row.querySelector('.role-badge').textContent = newRole.replace(/_/g, ' ');

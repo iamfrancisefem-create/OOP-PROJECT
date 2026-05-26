@@ -4,6 +4,7 @@ import com.pms.dto.response.ApiResponse;
 import com.pms.dto.response.FileUploadResponse;
 import com.pms.dto.response.PagedResponse;
 import com.pms.entity.FileUpload;
+import com.pms.exception.ResourceNotFoundException;
 import com.pms.repository.FileUploadRepository;
 import com.pms.service.FileService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,6 +27,7 @@ public class FileController {
     private final FileUploadRepository fileUploadRepository;
 
     @PostMapping("/upload")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<FileUploadResponse>> uploadFile(
             @RequestParam Long projectId,
             @RequestParam("file") MultipartFile file
@@ -34,11 +37,12 @@ public class FileController {
     }
 
     @GetMapping("/download/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
         Resource resource = fileService.downloadFile(id);
         
         FileUpload fileUpload = fileUploadRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("File details not found in database"));
+                .orElseThrow(() -> new ResourceNotFoundException("File details not found in database"));
 
         String contentType = fileUpload.getFileType();
         if (contentType == null) {
@@ -52,6 +56,7 @@ public class FileController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
     public ResponseEntity<ApiResponse<Void>> deleteFile(@PathVariable Long id) {
         fileService.deleteFile(id);
         return ResponseEntity.ok(ApiResponse.success("File deleted successfully from disk and registry.", null));

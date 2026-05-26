@@ -1,10 +1,13 @@
 package com.pms.controller;
 
+import com.pms.dto.request.ChangePasswordRequest;
+import com.pms.dto.request.UpdateRoleRequest;
+import com.pms.dto.request.UpdateUserRequest;
 import com.pms.dto.response.ApiResponse;
 import com.pms.dto.response.PagedResponse;
 import com.pms.dto.response.UserResponse;
-import com.pms.entity.enums.RoleName;
 import com.pms.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -37,30 +40,27 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<UserResponse>> updateUserRole(
             @PathVariable Long id,
-            @RequestParam RoleName role
+            @Valid @RequestBody UpdateRoleRequest request
     ) {
-        UserResponse updatedUser = userService.updateRole(id, role);
+        UserResponse updatedUser = userService.updateRole(id, request.getRole());
         return ResponseEntity.ok(ApiResponse.success("User role updated successfully.", updatedUser));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable Long id,
-            @RequestParam(required = false) String fullName,
-            @RequestParam(required = false) String phone,
-            @RequestParam(required = false) String profileImage
+            @Valid @RequestBody UpdateUserRequest request
     ) {
-        UserResponse updatedUser = userService.updateUser(id, fullName, phone, profileImage);
+        UserResponse updatedUser = userService.updateUser(id, request.getFullName(), request.getPhone(), request.getProfileImage());
         return ResponseEntity.ok(ApiResponse.success("User updated successfully.", updatedUser));
     }
 
     @PostMapping("/{id}/change-password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @PathVariable Long id,
-            @RequestParam String oldPassword,
-            @RequestParam String newPassword
+            @Valid @RequestBody ChangePasswordRequest request
     ) {
-        userService.changePassword(id, oldPassword, newPassword);
+        userService.changePassword(id, request.getOldPassword(), request.getNewPassword());
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully.", null));
     }
 }

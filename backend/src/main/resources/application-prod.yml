@@ -2,23 +2,26 @@
 # Production Profile — hardened settings for deployment
 # =============================================================================
 # Activate with: --spring.profiles.active=prod
+# Designed for Railway / cloud deployment
+
+server:
+  port: ${PORT:8080}                  # Railway provides PORT env var
 
 spring:
-  datasource:
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      idle-timeout: 300000
-      connection-timeout: 20000
-      max-lifetime: 1200000
-
   jpa:
     hibernate:
-      ddl-auto: validate          # Never auto-modify production schema
+      ddl-auto: validate              # Never auto-modify production schema
     show-sql: false
 
   flyway:
-    enabled: true
+    enabled: true                     # Run migrations on startup
+
+  hikari:
+    maximum-pool-size: 20
+    minimum-idle: 5
+    idle-timeout: 300000
+    connection-timeout: 20000
+    max-lifetime: 1200000
 
 logging:
   level:

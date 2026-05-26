@@ -68,9 +68,12 @@ server:
 # JWT Configuration
 # =============================================================================
 jwt:
-  secret: ${JWT_SECRET:c2VjdXJlLWp3dC1zZWNyZXQta2V5LWZvci1wcm9qZWN0LW1hbmFnZW1lbnQtc3lzdGVt}
+  # IMPORTANT: Override JWT_SECRET in production with a strong, unique Base64-encoded value.
+  # Default below is for development only and MUST be changed in production.
+  secret: ${JWT_SECRET:ZGV2LW9ubHktam10LXNlY3JldC1kby1ub3QtdXNlLWluLXByb2Q=}
   access-token-expiration: 900000        # 15 minutes in milliseconds
   refresh-token-expiration: 604800000    # 7 days in milliseconds
+  reset-token-expiration: 1800000       # 30 minutes in milliseconds
 
 # =============================================================================
 # File Storage

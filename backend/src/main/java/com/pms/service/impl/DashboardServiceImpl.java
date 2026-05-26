@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -31,6 +32,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final TeamMemberRepository teamMemberRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public DashboardResponse getDashboardStats() {
         long totalProjects = projectRepository.count();
         long totalMembers = teamMemberRepository.count();
@@ -54,10 +56,7 @@ public class DashboardServiceImpl implements DashboardService {
 
         Map<String, Long> tasksByPriority = new HashMap<>();
         for (TaskPriority priority : TaskPriority.values()) {
-            // Since we don't have countByPriority method in repo, let's query all tasks or calculate via counts
-            long count = taskRepository.findAll().stream()
-                    .filter(t -> t.getPriority() == priority)
-                    .count();
+            long count = taskRepository.countByPriority(priority);
             tasksByPriority.put(priority.name(), count);
         }
 
@@ -74,6 +73,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public AnalyticsResponse getAnalytics() {
         // 1. Fetch recent activities from Audit Logs
         Page<AuditLog> auditLogs = auditLogRepository.findAll(
@@ -110,13 +110,13 @@ public class DashboardServiceImpl implements DashboardService {
             teamPerformance.add(performance);
         });
 
-        // 3. Mock workload distribution
+        // 3. Workload distribution
         List<Map<String, Object>> workloadDistribution = new ArrayList<>();
         userRepository.findAll(PageRequest.of(0, 5)).getContent().forEach(user -> {
             Map<String, Object> workload = new HashMap<>();
-            long todo = taskRepository.findAll().stream().filter(t -> t.getAssignedTo() != null && t.getAssignedTo().getId().equals(user.getId()) && t.getStatus() == TaskStatus.TODO).count();
-            long inProgress = taskRepository.findAll().stream().filter(t -> t.getAssignedTo() != null && t.getAssignedTo().getId().equals(user.getId()) && t.getStatus() == TaskStatus.IN_PROGRESS).count();
-            long testing = taskRepository.findAll().stream().filter(t -> t.getAssignedTo() != null && t.getAssignedTo().getId().equals(user.getId()) && t.getStatus() == TaskStatus.TESTING).count();
+            long todo = taskRepository.countByAssignedToAndStatus(user, TaskStatus.TODO);
+            long inProgress = taskRepository.countByAssignedToAndStatus(user, TaskStatus.IN_PROGRESS);
+            long testing = taskRepository.countByAssignedToAndStatus(user, TaskStatus.TESTING);
 
             workload.put("userName", user.getFullName());
             workload.put("todo", todo);

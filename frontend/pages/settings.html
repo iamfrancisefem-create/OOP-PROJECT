@@ -150,7 +150,7 @@
       const phone = document.getElementById('settingsPhone').value.trim();
       try {
         const user = Session.getUser();
-        await UserAPI.updateUser(user.id, name, phone, user.profileImage);
+        await UserAPI.updateUser(user.id, { fullName: name, phone, profileImage: user.profileImage });
         const updated = { ...user, fullName: name, phone };
         Session.set(Session.getToken(), Session.getRefresh(), updated);
         toast('Profile updated', 'success');
@@ -169,7 +169,7 @@
       if (newP.length < 6) { toast('Password must be at least 6 characters', 'warning'); return; }
       try {
         const user = Session.getUser();
-        await UserAPI.changePassword(user.id, old, newP);
+        await UserAPI.changePassword(user.id, { oldPassword: old, newPassword: newP });
         toast('Password updated successfully', 'success');
         document.querySelectorAll('#panel-password .form-input').forEach(i => i.value = '');
       } catch (e) {

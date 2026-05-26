@@ -115,9 +115,7 @@ public class ReportServiceImpl implements ReportService {
             document.add(new Paragraph("Progress: " + String.format("%.2f", project.getProgress()) + "%"));
             
             document.add(new Paragraph("\nAssociated Tasks:"));
-            List<Task> tasks = taskRepository.findAll().stream()
-                    .filter(t -> t.getProject().getId().equals(project.getId()))
-                    .toList();
+            List<Task> tasks = taskRepository.findByProject(project);
             
             for (Task t : tasks) {
                 document.add(new Paragraph("- " + t.getTitle() + " [" + t.getStatus() + "]"));
@@ -144,9 +142,7 @@ public class ReportServiceImpl implements ReportService {
             header.createCell(3).setCellValue("Priority");
             header.createCell(4).setCellValue("Deadline");
             
-            List<Task> tasks = taskRepository.findAll().stream()
-                    .filter(t -> t.getProject().getId().equals(project.getId()))
-                    .toList();
+            List<Task> tasks = taskRepository.findByProject(project);
 
             int rowIdx = 3;
             for (Task t : tasks) {
@@ -166,6 +162,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Resource downloadReport(Long reportId) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report not found with ID: " + reportId));
@@ -173,6 +170,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PagedResponse<ReportResponse> getReportsByProject(Long projectId, Pageable pageable) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));

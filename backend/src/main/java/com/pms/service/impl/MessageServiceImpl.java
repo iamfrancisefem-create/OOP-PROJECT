@@ -89,11 +89,8 @@ public class MessageServiceImpl implements MessageService {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sender user not found with ID: " + senderId));
 
-        List<Message> unreadMessages = messageRepository.findAll().stream()
-                .filter(m -> m.getSender().getId().equals(sender.getId())
-                        && m.getReceiver().getId().equals(receiver.getId())
-                        && !m.getReadStatus())
-                .toList();
+        List<Message> unreadMessages = messageRepository
+                .findBySenderAndReceiverAndReadStatusFalse(sender, receiver);
 
         for (Message m : unreadMessages) {
             m.setReadStatus(true);

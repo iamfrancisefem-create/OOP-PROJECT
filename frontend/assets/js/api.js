@@ -102,18 +102,14 @@ export const AuthAPI = {
 export const UserAPI = {
   getAll(page = 0, size = 20)       { return api.get('/users', { params: { page, size } }); },
   getById(id)                        { return api.get(`/users/${id}`); },
-  updateUser(id, fullName, phone, profileImage) {
-    const params = {};
-    if (fullName)      params.fullName = fullName;
-    if (phone)         params.phone    = phone;
-    if (profileImage)  params.profileImage = profileImage;
-    return api.put(`/users/${id}`, null, { params });
+  updateUser(id, data) {
+    return api.put(`/users/${id}`, data);
   },
-  changePassword(id, oldPassword, newPassword) {
-    return api.post(`/users/${id}/change-password`, null, { params: { oldPassword, newPassword } });
+  changePassword(id, data) {
+    return api.post(`/users/${id}/change-password`, data);
   },
-  updateRole(id, role) {
-    return api.patch(`/users/${id}/role`, null, { params: { role } });
+  updateRole(id, data) {
+    return api.patch(`/users/${id}/role`, data);
   },
 };
 
@@ -175,7 +171,7 @@ export const DashboardAPI = {
 // ─── Message Endpoints ───────────────────────────────────
 export const MessageAPI = {
   send(receiverId, content) {
-    return api.post('/messages', null, { params: { receiverId, content } });
+    return api.post('/messages', { receiverId, content });
   },
   getChatHistory(otherUserId, page = 0, size = 20) {
     return api.get(`/messages/chat/${otherUserId}`, { params: { page, size } });

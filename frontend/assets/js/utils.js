@@ -206,7 +206,13 @@ export function setLoading(btn, loading) {
 export function showAlert(el, msg, type = 'error') {
   if (!el) return;
   el.className = `alert-banner show ${type}`;
-  el.innerHTML = `<i class="fa-solid fa-${type === 'error' ? 'circle-exclamation' : type === 'success' ? 'circle-check' : 'circle-info'}"></i><span>${msg}</span>`;
+  el.textContent = '';
+  const icon = document.createElement('i');
+  icon.className = `fa-solid fa-${type === 'error' ? 'circle-exclamation' : type === 'success' ? 'circle-check' : 'circle-info'}`;
+  el.appendChild(icon);
+  const span = document.createElement('span');
+  span.textContent = msg;
+  el.appendChild(span);
 }
 
 export function hideAlert(el) {
@@ -230,8 +236,10 @@ export function getAvatarColor(name = '') {
 
 // ─── Render Avatar ───────────────────────────────────────
 export function renderAvatar(name, imgUrl, size = 36) {
+  const sanitized = sanitize(name);
   if (imgUrl) {
-    return `<img src="${imgUrl}" alt="${name}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover">`;
+    const safeUrl = imgUrl.replace(/["\\]/g, '');
+    return `<img src="${safeUrl}" alt="${sanitized}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover">`;
   }
   const initials = getInitials(name);
   const color    = getAvatarColor(name);

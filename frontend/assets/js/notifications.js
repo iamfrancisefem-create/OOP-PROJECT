@@ -39,7 +39,7 @@ export async function loadNotifications(containerId, badgeId) {
         try {
           await NotificationAPI.markRead(id);
           el.remove();
-          const unreadCount = container.querySelectorAll('.notif-item').length;
+          const unreadCount = container.querySelectorAll('.notif-item.unread').length;
           if (badge) {
             badge.style.display = unreadCount > 0 ? 'flex' : 'none';
             badge.textContent = unreadCount > 9 ? '9+' : unreadCount;

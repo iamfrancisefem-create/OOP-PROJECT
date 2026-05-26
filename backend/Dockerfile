@@ -27,4 +27,4 @@ COPY --from=build /app/target/project-management-system-1.0.0.jar app.jar
 VOLUME /app/uploads
 
 # Configure container entrypoint
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=prod"]

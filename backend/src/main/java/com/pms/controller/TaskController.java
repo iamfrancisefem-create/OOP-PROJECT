@@ -65,6 +65,7 @@ public class TaskController {
 
     // Supports both PATCH /tasks/{id}/status and PATCH /tasks/status per prompt spec
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER', 'TEAM_LEADER')")
     public ResponseEntity<ApiResponse<TaskResponse>> updateStatus(
             @PathVariable Long id,
             @RequestParam TaskStatus status
@@ -74,6 +75,7 @@ public class TaskController {
     }
 
     @PatchMapping("/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER', 'TEAM_LEADER')")
     public ResponseEntity<ApiResponse<TaskResponse>> updateStatusQuery(
             @RequestParam Long taskId,
             @RequestParam TaskStatus status

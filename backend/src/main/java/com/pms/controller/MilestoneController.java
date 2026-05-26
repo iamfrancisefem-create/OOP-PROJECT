@@ -70,4 +70,20 @@ public class MilestoneController {
         MilestoneResponse response = milestoneService.updateStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success("Milestone status updated successfully.", response));
     }
+
+    @GetMapping("/project/{projectId}")
+    public ResponseEntity<ApiResponse<PagedResponse<MilestoneResponse>>> getMilestonesByProject(
+            @PathVariable Long projectId,
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        PagedResponse<MilestoneResponse> response = milestoneService.getMilestonesByProjectId(projectId, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Milestones retrieved successfully for project.", response));
+    }
+
+    @PatchMapping("/{id}/complete")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER', 'TEAM_LEADER')")
+    public ResponseEntity<ApiResponse<MilestoneResponse>> completeMilestone(@PathVariable Long id) {
+        MilestoneResponse response = milestoneService.updateStatus(id, MilestoneStatus.COMPLETED);
+        return ResponseEntity.ok(ApiResponse.success("Milestone marked as completed.", response));
+    }
 }

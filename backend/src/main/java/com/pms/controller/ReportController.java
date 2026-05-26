@@ -5,6 +5,7 @@ import com.pms.dto.response.PagedResponse;
 import com.pms.dto.response.ReportResponse;
 import com.pms.entity.Report;
 import com.pms.entity.enums.ReportType;
+import com.pms.exception.ResourceNotFoundException;
 import com.pms.repository.ReportRepository;
 import com.pms.service.ReportService;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +41,7 @@ public class ReportController {
         Resource resource = reportService.downloadReport(id);
 
         Report report = reportRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Report details not found in database"));
+                .orElseThrow(() -> new ResourceNotFoundException("Report details not found in database"));
 
         String contentType = "application/octet-stream";
         String fileName = "Report_" + id;

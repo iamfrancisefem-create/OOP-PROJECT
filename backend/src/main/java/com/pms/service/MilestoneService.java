@@ -13,4 +13,5 @@ public interface MilestoneService {
     MilestoneResponse updateMilestone(Long id, MilestoneRequest request);
     void deleteMilestone(Long id);
     MilestoneResponse updateStatus(Long id, MilestoneStatus status);
+    PagedResponse<MilestoneResponse> getMilestonesByProjectId(Long projectId, Pageable pageable);
 }
