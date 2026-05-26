@@ -170,3 +170,47 @@ footer .logo {
     flex-direction: column;
   }
 }
+
+
+/* --- Table Component ------------------------------------- */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--border, #e5e7eb);
+  background: var(--surface, #ffffff);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.table th,
+.table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.table th {
+  background: var(--surface-2, #f8fafc);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-secondary, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table tbody tr:hover {
+  background: var(--primary-light, #e0f2fe);
+}
+
+[data-theme="dark"] .table tbody tr:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
