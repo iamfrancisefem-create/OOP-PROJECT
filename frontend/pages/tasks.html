@@ -20,25 +20,78 @@
     <div class="main-content">
       <div id="navbarContainer"></div>
       <div class="page-body">
-        <div class="section-header">
-          <div>
-            <h2>Tasks</h2>
-            <p>Drag and drop to update task status</p>
-          </div>
-          <div class="flex gap-3">
-            <div class="search-bar">
-              <i class="fa-solid fa-search"></i>
-              <input type="text" id="taskSearch" placeholder="Search tasks...">
-            </div>
-            <div class="custom-select-wrapper" style="min-width:160px">
-              <select class="form-select" id="projectFilter">
-                <option value="">All Projects</option>
-              </select>
-            </div>
-            <button class="btn btn-primary" id="newTaskBtn"><i class="fa-solid fa-plus"></i> New Task</button>
-          </div>
+  <div class="glass-card">
+    <div class="section-header">
+      <div>
+        <h2>Tasks</h2>
+        <p>Drag and drop to update task status</p>
+      </div>
+      <div class="flex gap-3">
+        <div class="search-bar">
+          <i class="fa-solid fa-search"></i>
+          <input type="text" id="taskSearch" placeholder="Search tasks...">
         </div>
-        <div class="kanban-board" id="kanbanBoard">
+        <div class="custom-select-wrapper" style="min-width:160px">
+          <select id="projectFilter" class="custom-select"></select>
+        </div>
+        <button id="newTaskBtn" class="btn-primary">
+          <i class="fa-solid fa-plus"></i> New Task
+        </button>
+      </div>
+    </div>
+    <div id="kanbanBoard" class="glass-card">
+      <div class="kanban-column col-todo">
+        <div class="kanban-column-header">
+          <span class="column-label"><span class="column-dot"></span> To Do</span>
+          <span class="column-count" id="todoCount">0</span>
+        </div>
+        <div class="kanban-tasks" data-status="TODO" id="todoList"></div>
+        <button class="add-task-btn" data-status="TODO"><i class="fa-solid fa-plus"></i> Add Task</button>
+      </div>
+      <div class="kanban-column col-inprog">
+        <div class="kanban-column-header">
+          <span class="column-label"><span class="column-dot"></span> In Progress</span>
+          <span class="column-count" id="inprogCount">0</span>
+        </div>
+        <div class="kanban-tasks" data-status="IN_PROGRESS" id="inprogList"></div>
+        <button class="add-task-btn" data-status="IN_PROGRESS"><i class="fa-solid fa-plus"></i> Add Task</button>
+      </div>
+      <div class="kanban-column col-testing">
+        <div class="kanban-column-header">
+          <span class="column-label"><span class="column-dot"></span> Testing</span>
+          <span class="column-count" id="testingCount">0</span>
+        </div>
+        <div class="kanban-tasks" data-status="TESTING" id="testingList"></div>
+        <button class="add-task-btn" data-status="TESTING"><i class="fa-solid fa-plus"></i> Add Task</button>
+      </div>
+      <div class="kanban-column col-done">
+        <div class="kanban-column-header">
+          <span class="column-label"><span class="column-dot"></span> Done</span>
+          <span class="column-count" id="doneCount">0</span>
+        </div>
+        <div class="kanban-tasks" data-status="DONE" id="doneList"></div>
+        <button class="add-task-btn" data-status="DONE"><i class="fa-solid fa-plus"></i> Add Task</button>
+      </div>
+    </div>
+  </div>
+</div>
+        <div class="glass-card">
+          <div class="section-header">
+            <div>
+              <h2>Tasks</h2>
+              <p>Drag and drop to update task status</p>
+            </div>
+            <div class="flex gap-3">
+              <div class="search-bar">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" id="taskSearch" placeholder="Search tasks...">
+              </div>
+              <div class="custom-select-wrapper" style="min-width:160px">
+  <select id="projectFilter" class="custom-select"></select>
+</div>
+<button id="newTaskBtn" class="btn-primary">
+  <i class="fa-solid fa-plus"></i> New Task
+</button>
           <div class="kanban-column col-todo">
             <div class="kanban-column-header">
               <span class="column-label"><span class="column-dot"></span> To Do</span>
@@ -56,19 +109,6 @@
             <button class="add-task-btn" data-status="IN_PROGRESS"><i class="fa-solid fa-plus"></i> Add Task</button>
           </div>
           <div class="kanban-column col-testing">
-            <div class="kanban-column-header">
-              <span class="column-label"><span class="column-dot"></span> Testing</span>
-              <span class="column-count" id="testingCount">0</span>
-            </div>
-            <div class="kanban-tasks" data-status="TESTING" id="testingList"></div>
-            <button class="add-task-btn" data-status="TESTING"><i class="fa-solid fa-plus"></i> Add Task</button>
-          </div>
-          <div class="kanban-column col-done">
-            <div class="kanban-column-header">
-              <span class="column-label"><span class="column-dot"></span> Done</span>
-              <span class="column-count" id="doneCount">0</span>
-            </div>
-            <div class="kanban-tasks" data-status="DONE" id="doneList"></div>
             <button class="add-task-btn" data-status="DONE"><i class="fa-solid fa-plus"></i> Add Task</button>
           </div>
         </div>

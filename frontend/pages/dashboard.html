@@ -20,7 +20,8 @@
     <div id="sidebarContainer"></div>
     <div class="main-content">
       <div id="navbarContainer"></div>
-      <div class="page-body" id="pageBody">
+  
+      <div class="glass-card">
         <div class="stats-grid" id="statsGrid">
           <div class="skeleton skeleton-card"></div>
           <div class="skeleton skeleton-card"></div>
@@ -28,24 +29,42 @@
           <div class="skeleton skeleton-card"></div>
           <div class="skeleton skeleton-card"></div>
         </div>
+      </div>
+
+      <div class="glass-card">
         <div class="chart-grid" id="chartGrid">
           <div class="chart-card">
             <div class="chart-card-header">
-              <div><div class="chart-title">Task Completion</div><div class="chart-sub">Overview of task statuses</div></div>
+              <div>
+                <div class="chart-title">Task Completion</div>
+                <div class="chart-sub">Overview of task statuses</div>
+              </div>
             </div>
-            <div class="chart-card-body"><canvas id="taskChart"></canvas></div>
+            <div class="chart-card-body">
+              <canvas id="taskChart"></canvas>
+            </div>
           </div>
           <div class="chart-card">
             <div class="chart-card-header">
-              <div><div class="chart-title">Project Progress</div><div class="chart-sub">Completion rate by project</div></div>
+              <div>
+                <div class="chart-title">Project Progress</div>
+                <div class="chart-sub">Completion rate by project</div>
+              </div>
             </div>
-            <div class="chart-card-body"><canvas id="projectChart"></canvas></div>
+            <div class="chart-card-body">
+              <canvas id="projectChart"></canvas>
+            </div>
           </div>
         </div>
+      </div>
+
+      <div class="glass-card">
         <div class="grid grid-auto mb-6" id="recentProjects">
           <div class="card"><div class="card-body"><div class="skeleton skeleton-text w-60"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text w-40"></div></div></div>
           <div class="card"><div class="card-body"><div class="skeleton skeleton-text w-60"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text w-40"></div></div></div>
         </div>
+      </div>
+      <div class="glass-card">
         <div class="card" id="activityCard">
           <div class="card-header"><h3>Recent Activity</h3></div>
           <div class="card-body">
@@ -54,6 +73,8 @@
             </div>
           </div>
         </div>
+      </div>
+
       </div>
     </div>
   </div>
