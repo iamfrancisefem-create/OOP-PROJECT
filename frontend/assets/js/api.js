@@ -6,7 +6,8 @@
 
 import { Session, toast } from './utils.js';
 
-const BASE_URL = 'http://localhost:8080/api/v1';
+const RAILWAY_URL = 'https://oop-project-production.up.railway.app/api/v1';
+const BASE_URL = (typeof API_URL !== 'undefined' ? API_URL : RAILWAY_URL);
 
 // ─── Create Axios Instance ───────────────────────────────
 const api = axios.create({
