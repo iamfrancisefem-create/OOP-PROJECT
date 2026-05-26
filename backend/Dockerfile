@@ -23,8 +23,5 @@ EXPOSE 8080
 # Copy the generated JAR from Stage 1
 COPY --from=build /app/target/project-management-system-1.0.0.jar app.jar
 
-# Define storage volumes for file uploads
-VOLUME /app/uploads
-
 # Configure container entrypoint
 ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=prod"]
