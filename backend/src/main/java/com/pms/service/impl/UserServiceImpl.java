@@ -18,8 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -84,7 +82,8 @@ public class UserServiceImpl implements UserService {
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new BadRequestException("Role not found: " + roleName));
 
-        user.setRoles(new HashSet<>(Collections.singletonList(role)));
+        user.getRoles().clear();
+        user.getRoles().add(role);
         User updatedUser = userRepository.save(user);
         return userMapper.toResponse(updatedUser);
     }
