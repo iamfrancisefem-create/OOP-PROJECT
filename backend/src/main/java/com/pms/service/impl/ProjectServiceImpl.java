@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import com.pms.repository.TeamMemberRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +34,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final ProjectMapper projectMapper;
+    private final TeamMemberRepository teamMemberRepository;
 
     private User getCurrentAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -60,8 +62,20 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public PagedResponse<ProjectResponse> getAllProjects(Pageable pageable) {
+        User currentUser = getCurrentAuthenticatedUser();
         Page<Project> projectsPage = projectRepository.findAll(pageable);
         List<ProjectResponse> content = projectsPage.getContent().stream()
+                .filter(project -> {
+                    // creator
+                    if (project.getCreatedBy() != null && project.getCreatedBy().getId().equals(currentUser.getId())) {
+                        return true;
+                    }
+                    // team member
+                    if (project.getTeam() != null) {
+                        return teamMemberRepository.existsByTeamAndUser(project.getTeam(), currentUser);
+                    }
+                    return false;
+                })
                 .map(projectMapper::toResponse)
                 .toList();
 
@@ -77,8 +91,18 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectResponse getProjectById(Long id) {
+        User currentUser = getCurrentAuthenticatedUser();
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
+        boolean authorized = false;
+        if (project.getCreatedBy() != null && project.getCreatedBy().getId().equals(currentUser.getId())) {
+            authorized = true;
+        } else if (project.getTeam() != null) {
+            authorized = teamMemberRepository.existsByTeamAndUser(project.getTeam(), currentUser);
+        }
+        if (!authorized) {
+            throw new com.pms.exception.BadRequestException("Access denied to project");
+        }
         return projectMapper.toResponse(project);
     }
 

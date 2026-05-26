@@ -12,6 +12,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.pms.exception.ResourceNotFoundException;
+import com.pms.repository.TeamMemberRepository;
+import com.pms.repository.UserRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +25,14 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final TeamMemberRepository teamMemberRepository;
+    private final UserRepository userRepository;
+
+    private User getCurrentAuthenticatedUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
+    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<PagedResponse<UserResponse>>> getAllUsers(
@@ -36,6 +48,7 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User retrieved successfully.", user));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','PROJECT_MANAGER')")
     @PatchMapping("/{id}/role")
     public ResponseEntity<ApiResponse<UserResponse>> updateUserRole(
             @PathVariable Long id,

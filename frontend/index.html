@@ -1,93 +1,69 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ProjectFlow — Project Management System</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="stylesheet" href="assets/css/auth.css">
-  <link rel="stylesheet" href="assets/css/dashboard.css">
-  <link rel="stylesheet" href="assets/css/forms.css">
-  <link rel="stylesheet" href="assets/css/responsive.css">
-  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Management System</title>
+  <meta name="description" content="A premium project management SaaS built with a sleek UI and real‑time collaboration." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/auth.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
-  <style>
-    body { overflow: hidden; }
-    .initial-loader {
-      position: fixed; inset: 0; background: var(--bg);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center; z-index: 9999;
-      transition: opacity 0.4s ease;
-    }
-    .initial-loader.hidden { opacity: 0; pointer-events: none; }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script type="module" src="assets/js/auth.js"></script>
 </head>
 <body>
-  <div class="initial-loader" id="initialLoader">
-    <div style="width:56px;height:56px;background:var(--primary);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;animation:pulse 1.4s ease-in-out infinite;box-shadow:0 4px 20px rgba(37,99,235,0.35)">P</div>
-    <p style="margin-top:16px;font-weight:600;color:var(--text-secondary)">Loading ProjectFlow...</p>
-  </div>
-
-  <div class="app-shell" id="appShell" style="display:none">
-    <div id="sidebarContainer"></div>
-    <div class="main-content">
-      <div id="navbarContainer"></div>
-      <div class="page-body" id="pageBody">
-        <div class="empty-state" style="padding:80px 24px">
-          <div class="empty-icon"><i class="fa-solid fa-rocket"></i></div>
-          <h4>Welcome to ProjectFlow</h4>
-          <p>Select a page from the sidebar to get started.</p>
+  <div class="app-shell">
+    <!-- Sidebar (hidden on landing) -->
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main-content">
+      <nav class="navbar">
+        <div class="navbar-left">
+          <button class="btn-menu-toggle"><i class="fa-solid fa-bars"></i></button>
+          <div class="page-title">Welcome</div>
         </div>
-      </div>
-    </div>
+        <div class="navbar-right">
+          <button class="btn-icon theme-toggle" title="Toggle theme"><i class="fa-solid fa-moon"></i></button>
+        </div>
+      </nav>
+      <section class="page-body">
+        <div class="auth-page">
+          <div class="auth-card">
+            <div class="auth-card-header">
+              <h2>Project Management System</h2>
+              <p>Organize, collaborate, and deliver with confidence.</p>
+            </div>
+            <div class="auth-card-body">
+              <button class="btn btn-primary btn-full" id="btnLogin">
+                <i class="fa-solid fa-right-to-bracket"></i> Log In
+              </button>
+              <button class="btn btn-outline btn-full" id="btnRegister">
+                <i class="fa-solid fa-user-plus"></i> Register
+              </button>
+            </div>
+            <div class="auth-footer">
+              <a href="#" id="btnDemo">Try demo account</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
-
-  <div id="modalContainer"></div>
-
-  <script type="module">
-    import { Theme, Session, authGuard, initSidebar, closeAllModals } from './assets/js/utils.js';
-    import './assets/js/api.js';
-
-    Theme.init();
-
-    authGuard();
-
-    async function loadComponent(url, containerId) {
-      try {
-        const res = await fetch(url);
-        const html = await res.text();
-        document.getElementById(containerId).innerHTML = html;
-      } catch (e) {
-        console.error('Failed to load component:', url, e);
-      }
-    }
-
-    async function init() {
-      await Promise.all([
-        loadComponent('components/sidebar.html', 'sidebarContainer'),
-        loadComponent('components/navbar.html', 'navbarContainer'),
-        loadComponent('components/modals.html', 'modalContainer'),
-      ]);
-
-      document.getElementById('initialLoader').classList.add('hidden');
-      document.getElementById('appShell').style.display = 'flex';
-
-      initSidebar('dashboard');
-
-      document.addEventListener('click', e => {
-        const dd = e.target.closest('[data-toggle="dropdown"]');
-        if (dd) {
-          const target = document.getElementById(dd.dataset.target);
-          if (target) target.classList.toggle('open');
-        }
-      });
-    }
-
-    init();
+  <script>
+    // Quick navigation from landing
+    document.getElementById('btnLogin').addEventListener('click', () => location.href = 'pages/login.html');
+    document.getElementById('btnRegister').addEventListener('click', () => location.href = 'pages/register.html');
+    // Demo button loads a pre‑seeded account (email: demo@pms.com, password: demo123)
+    document.getElementById('btnDemo').addEventListener('click', e => {
+      e.preventDefault();
+      // Store demo credentials in session and redirect to dashboard
+      import('./js/auth.js').then(({ loginDemo }) => loginDemo());
+    });
   </script>
 </body>
 </html>

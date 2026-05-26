@@ -9,8 +9,8 @@ import com.pms.exception.ResourceNotFoundException;
 import com.pms.mapper.MessageMapper;
 import com.pms.repository.MessageRepository;
 import com.pms.repository.UserRepository;
-import com.pms.service.MessageService;
 import com.pms.service.NotificationService;
+import com.pms.repository.TeamMemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +29,7 @@ public class MessageServiceImpl implements MessageService {
     private final UserRepository userRepository;
     private final MessageMapper messageMapper;
     private final NotificationService notificationService;
+    private final TeamMemberRepository teamMemberRepository;
 
     private User getCurrentAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -42,7 +43,13 @@ public class MessageServiceImpl implements MessageService {
         User sender = getCurrentAuthenticatedUser();
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Receiver user not found with ID: " + receiverId));
-
+        // Verify that sender and receiver share at least one common team
+        boolean sameTeam = teamMemberRepository.findByUser(sender).stream()
+                .anyMatch(tm -> teamMemberRepository.findByUser(receiver).stream()
+                        .anyMatch(rtm -> rtm.getTeam().getId().equals(tm.getTeam().getId()));
+        if (!sameTeam) {
+            throw new com.pms.exception.BadRequestException("Sender and receiver are not in the same team");
+        }
         Message message = Message.builder()
                 .sender(sender)
                 .receiver(receiver)
