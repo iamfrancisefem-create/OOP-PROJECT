@@ -838,3 +838,49 @@
 .milestone-info { flex: 1; }
 .milestone-title { font-size: 14px; font-weight: 600; }
 .milestone-date { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* ─── Premium UI Overrides (Redesign) ───────────────────── */
+.app-shell { background: var(--bg); }
+
+.sidebar {
+  background: var(--surface) !important;
+  border-right: 1px solid rgba(128, 128, 128, 0.1) !important;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02) !important;
+}
+
+.navbar {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.1) !important;
+}
+
+[data-theme="dark"] .navbar {
+  background: rgba(17, 24, 39, 0.7) !important;
+}
+
+.nav-item.active {
+  background: linear-gradient(90deg, var(--primary-light) 0%, transparent 100%) !important;
+  border-left: 3px solid var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+[data-theme="dark"] .nav-item.active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, transparent 100%) !important;
+}
+
+.project-card:hover, .task-card:hover, .stat-card:hover, .team-card:hover {
+  transform: translateY(-4px) scale(1.01) !important;
+  box-shadow: var(--shadow-lg) !important;
+  border-color: var(--primary) !important;
+}
+
+.kanban-column {
+  background: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+[data-theme="dark"] .kanban-column {
+  background: rgba(0, 0, 0, 0.2) !important;
+}
