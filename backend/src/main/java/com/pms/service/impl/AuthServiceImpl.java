@@ -77,9 +77,10 @@ public class AuthServiceImpl implements AuthService {
             } catch (IllegalArgumentException ignored) {}
         }
 
-        Role userRole = roleRepository.findByName(requestedRole)
+        final RoleName finalRole = requestedRole;
+        Role userRole = roleRepository.findByName(finalRole)
                 .orElseGet(() -> {
-                    Role newRole = Role.builder().name(requestedRole).build();
+                    Role newRole = Role.builder().name(finalRole).build();
                     return roleRepository.save(newRole);
                 });
 
