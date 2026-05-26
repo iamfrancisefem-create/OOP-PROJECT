@@ -25,6 +25,6 @@ spring:
 
 logging:
   level:
-    com.pms: WARN
+    com.pms: DEBUG
     org.springframework.security: WARN
     org.hibernate: ERROR
