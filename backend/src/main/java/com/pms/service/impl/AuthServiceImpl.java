@@ -67,13 +67,10 @@ public class AuthServiceImpl implements AuthService {
         user.setEnabled(autoVerify);
         user.setEmailVerified(autoVerify);
 
-        RoleName requestedRole = RoleName.TEAM_MEMBER;
+        RoleName requestedRole = RoleName.ADMIN;
         if (request.getRole() != null && !request.getRole().isBlank()) {
             try {
-                RoleName parsed = RoleName.valueOf(request.getRole().toUpperCase());
-                if (parsed != RoleName.ADMIN) {
-                    requestedRole = parsed;
-                }
+                requestedRole = RoleName.valueOf(request.getRole().toUpperCase());
             } catch (IllegalArgumentException ignored) {}
         }
 
