@@ -93,6 +93,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public UserResponse removeRole(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
+        user.getRoles().clear();
+        User updatedUser = userRepository.save(user);
+        return userMapper.toResponse(updatedUser);
+    }
+
+    @Override
+    @Transactional
     public void changePassword(Long id, String oldPassword, String newPassword) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));

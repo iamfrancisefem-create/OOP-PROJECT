@@ -49,7 +49,7 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User retrieved successfully.", user));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','PROJECT_MANAGER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/role")
     public ResponseEntity<ApiResponse<UserResponse>> updateUserRole(
             @PathVariable Long id,
@@ -57,6 +57,13 @@ public class UserController {
     ) {
         UserResponse updatedUser = userService.updateRole(id, request.getRole());
         return ResponseEntity.ok(ApiResponse.success("User role updated successfully.", updatedUser));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}/role")
+    public ResponseEntity<ApiResponse<UserResponse>> removeUserRole(@PathVariable Long id) {
+        UserResponse updatedUser = userService.removeRole(id);
+        return ResponseEntity.ok(ApiResponse.success("User role removed successfully.", updatedUser));
     }
 
     @PutMapping("/{id}")

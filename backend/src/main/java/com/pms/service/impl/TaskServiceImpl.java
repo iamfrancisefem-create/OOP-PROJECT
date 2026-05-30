@@ -31,11 +31,23 @@ public class TaskServiceImpl implements TaskService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final TaskMapper taskMapper;
+    private final com.pms.repository.TeamMemberRepository teamMemberRepository;
 
     private User getCurrentAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
+    }
+
+    private void validateProjectAccess(Project project) {
+        User currentUser = getCurrentAuthenticatedUser();
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
+        boolean isCreator = project.getCreatedBy() != null && project.getCreatedBy().getId().equals(currentUser.getId());
+        boolean isTeamMember = project.getTeam() != null && teamMemberRepository.existsByTeamAndUser(project.getTeam(), currentUser);
+
+        if (!isAdmin && !isCreator && !isTeamMember) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied: You do not have permission to view or manage tasks for this project.");
+        }
     }
 
     private void updateProjectProgress(Project project) {
@@ -56,6 +68,8 @@ public class TaskServiceImpl implements TaskService {
         User creator = getCurrentAuthenticatedUser();
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + request.getProjectId()));
+
+        validateProjectAccess(project);
 
         Task task = taskMapper.toEntity(request);
         task.setProject(project);
@@ -94,6 +108,9 @@ public class TaskServiceImpl implements TaskService {
     public TaskResponse getTaskById(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
+        
+        validateProjectAccess(task.getProject());
+        
         return taskMapper.toResponse(task);
     }
 
@@ -103,6 +120,14 @@ public class TaskServiceImpl implements TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
         
+        validateProjectAccess(task.getProject());
+        if (!task.getProject().getId().equals(request.getProjectId())) {
+            Project newProject = projectRepository.findById(request.getProjectId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + request.getProjectId()));
+            validateProjectAccess(newProject);
+            task.setProject(newProject);
+        }
+        
         Project oldProject = task.getProject();
 
         task.setTitle(request.getTitle());
@@ -110,12 +135,6 @@ public class TaskServiceImpl implements TaskService {
         task.setStatus(request.getStatus());
         task.setPriority(request.getPriority());
         task.setDeadline(request.getDeadline());
-
-        if (!task.getProject().getId().equals(request.getProjectId())) {
-            Project newProject = projectRepository.findById(request.getProjectId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + request.getProjectId()));
-            task.setProject(newProject);
-        }
 
         if (request.getAssignedToId() != null) {
             User assignedTo = userRepository.findById(request.getAssignedToId())
@@ -140,6 +159,9 @@ public class TaskServiceImpl implements TaskService {
     public void deleteTask(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
+        
+        validateProjectAccess(task.getProject());
+        
         Project project = task.getProject();
         taskRepository.delete(task);
         updateProjectProgress(project);
@@ -150,6 +172,9 @@ public class TaskServiceImpl implements TaskService {
     public TaskResponse updateStatus(Long id, TaskStatus status) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
+        
+        validateProjectAccess(task.getProject());
+        
         task.setStatus(status);
         Task updatedTask = taskRepository.save(task);
         updateProjectProgress(task.getProject());
@@ -161,6 +186,8 @@ public class TaskServiceImpl implements TaskService {
     public TaskResponse assignTask(Long id, Long assignedToId) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
+
+        validateProjectAccess(task.getProject());
 
         if (assignedToId != null) {
             User assignedTo = userRepository.findById(assignedToId)
@@ -178,6 +205,8 @@ public class TaskServiceImpl implements TaskService {
     public PagedResponse<TaskResponse> getTasksByProjectId(Long projectId, Pageable pageable) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
+
+        validateProjectAccess(project);
 
         Page<Task> tasksPage = taskRepository.findByProject(project, pageable);
         List<TaskResponse> content = tasksPage.getContent().stream()

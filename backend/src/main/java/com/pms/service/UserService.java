@@ -10,5 +10,6 @@ public interface UserService {
     UserResponse getUserById(Long id);
     UserResponse updateUser(Long id, String fullName, String phone, String profileImage);
     UserResponse updateRole(Long id, RoleName roleName);
+    UserResponse removeRole(Long id);
     void changePassword(Long id, String oldPassword, String newPassword);
 }

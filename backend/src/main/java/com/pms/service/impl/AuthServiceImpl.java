@@ -67,7 +67,7 @@ public class AuthServiceImpl implements AuthService {
         user.setEnabled(autoVerify);
         user.setEmailVerified(autoVerify);
 
-        RoleName requestedRole = RoleName.ADMIN;
+        RoleName requestedRole = RoleName.TEAM_MEMBER;
         if (request.getRole() != null && !request.getRole().isBlank()) {
             try {
                 requestedRole = RoleName.valueOf(request.getRole().toUpperCase());
@@ -90,7 +90,9 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtService.generateRefreshToken(savedUser);
 
         log.info("Successfully registered user: {}", savedUser.getEmail());
-        sendVerificationEmail(savedUser.getEmail(), savedUser.getFullName(), verificationToken);
+        if (!autoVerify) {
+            sendVerificationEmail(savedUser.getEmail(), savedUser.getFullName(), verificationToken);
+        }
 
         return AuthResponse.builder()
                 .id(savedUser.getId())

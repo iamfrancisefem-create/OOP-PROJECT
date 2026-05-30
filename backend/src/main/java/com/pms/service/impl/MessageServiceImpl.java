@@ -44,12 +44,14 @@ public class MessageServiceImpl implements MessageService {
         User sender = getCurrentAuthenticatedUser();
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Receiver user not found with ID: " + receiverId));
+        
+        boolean isAdmin = sender.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
         // Verify that sender and receiver share at least one common team
         boolean sameTeam = teamMemberRepository.findByUser(sender).stream()
                 .anyMatch(tm -> teamMemberRepository.findByUser(receiver).stream()
                         .anyMatch(rtm -> rtm.getTeam().getId().equals(tm.getTeam().getId())));
-        if (!sameTeam) {
-            throw new com.pms.exception.BadRequestException("Sender and receiver are not in the same team");
+        if (!sameTeam && !isAdmin) {
+            throw new org.springframework.security.access.AccessDeniedException("Sender and receiver are not in the same team");
         }
         Message message = Message.builder()
                 .sender(sender)
@@ -75,6 +77,15 @@ public class MessageServiceImpl implements MessageService {
         User otherUser = userRepository.findById(otherUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Other user not found with ID: " + otherUserId));
 
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
+        // Verify that currentUser and otherUser share at least one common team
+        boolean sameTeam = teamMemberRepository.findByUser(currentUser).stream()
+                .anyMatch(tm -> teamMemberRepository.findByUser(otherUser).stream()
+                        .anyMatch(rtm -> rtm.getTeam().getId().equals(tm.getTeam().getId())));
+        if (!sameTeam && !isAdmin) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied: You are not in the same team as this user.");
+        }
+
         Page<Message> historyPage = messageRepository.findChatHistory(currentUser, otherUser, pageable);
         List<MessageResponse> content = historyPage.getContent().stream()
                 .map(messageMapper::toResponse)
@@ -96,6 +107,15 @@ public class MessageServiceImpl implements MessageService {
         User receiver = getCurrentAuthenticatedUser();
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sender user not found with ID: " + senderId));
+
+        boolean isAdmin = receiver.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
+        // Verify that receiver and sender share at least one common team
+        boolean sameTeam = teamMemberRepository.findByUser(receiver).stream()
+                .anyMatch(tm -> teamMemberRepository.findByUser(sender).stream()
+                        .anyMatch(rtm -> rtm.getTeam().getId().equals(tm.getTeam().getId())));
+        if (!sameTeam && !isAdmin) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied: You are not in the same team as this user.");
+        }
 
         List<Message> unreadMessages = messageRepository
                 .findBySenderAndReceiverAndReadStatusFalse(sender, receiver);

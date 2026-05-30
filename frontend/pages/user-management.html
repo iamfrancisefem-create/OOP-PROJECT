@@ -37,15 +37,16 @@
             <table class="table" id="userTable">
               <thead>
                 <tr>
-                  <th>User</th>
+                  <th>User Name</th>
                   <th>Email</th>
-                  <th>Phone</th>
                   <th>Current Role</th>
-                  <th>Change Role</th>
+                  <th>Account Status</th>
+                  <th>Date Joined</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="userTableBody">
-                <tr><td colspan="5" class="text-muted" style="text-align:center;padding:32px">Loading...</td></tr>
+                <tr><td colspan="6" class="text-muted" style="text-align:center;padding:32px">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -77,41 +78,62 @@
     async function loadUsers(p = 0) {
       currentPage = p;
       const tbody = document.getElementById('userTableBody');
-      tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Loading...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Loading...</td></tr>';
       try {
         const res = await UserAPI.getAll(p, 20);
         const data = res.data.data;
         const users = data.content || data || [];
         totalPages = data.totalPages || 1;
         if (!users.length) {
-          tbody.innerHTML = '<tr><td colspan="5" class="text-muted">No users found.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" class="text-muted">No users found.</td></tr>';
           return;
         }
-        tbody.innerHTML = users.map(u => `
+        tbody.innerHTML = users.map(u => {
+          const currentRole = u.roles?.[0] || 'NONE';
+          const roleBadgeClass = currentRole === 'ADMIN' ? 'badge-danger' :
+                                 currentRole === 'PROJECT_MANAGER' ? 'badge-primary' :
+                                 currentRole === 'TEAM_LEADER' ? 'badge-warning' :
+                                 currentRole === 'PRODUCT_OWNER' ? 'badge-info' : 'badge-neutral';
+          const statusBadge = u.enabled
+            ? `<span class="badge badge-success" style="padding:4px 8px;font-size:11px">Active</span>`
+            : `<span class="badge badge-danger" style="padding:4px 8px;font-size:11px">Disabled</span>`;
+          const dateJoined = DateHelper.format(u.createdAt);
+          
+          return `
           <tr>
             <td>
-              <div class="user-cell">
-                <div class="mini-avatar">${(u.fullName || u.email || '?')[0].toUpperCase()}</div>
-                <span style="font-weight:600">${u.fullName || 'N/A'}</span>
+              <div class="user-cell" style="display:flex;align-items:center;gap:10px">
+                <div class="mini-avatar" style="width:32px;height:32px;border-radius:50%;background:#6366f1;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px">${(u.fullName || u.email || '?')[0].toUpperCase()}</div>
+                <span style="font-weight:600;color:var(--text-primary)">${u.fullName || 'N/A'}</span>
               </div>
             </td>
             <td>${u.email}</td>
-            <td>${u.phone || '—'}</td>
-            <td><span class="role-badge" style="display:inline-flex;font-size:11px;padding:3px 10px">${(u.roles?.[0] || 'NONE').replace(/_/g, ' ')}</span></td>
+            <td><span class="role-badge badge ${roleBadgeClass}" style="display:inline-flex;font-size:11px;padding:3px 10px">${currentRole.replace(/_/g, ' ')}</span></td>
+            <td>${statusBadge}</td>
+            <td>${dateJoined}</td>
             <td>
-              <select class="form-select role-select" data-user-id="${u.id}" data-current-role="${u.roles?.[0] || ''}" style="width:auto;min-width:140px">
-                ${Object.values(ROLES).map(r => `<option value="${r}" ${u.roles?.[0] === r ? 'selected' : ''}>${r.replace(/_/g, ' ')}</option>`).join('')}
-              </select>
+              <div class="flex items-center gap-2" style="display:inline-flex;align-items:center;gap:8px">
+                <select class="form-select role-select" data-user-id="${u.id}" data-current-role="${currentRole}" style="width:auto;min-width:140px;padding:4px 8px;font-size:13px">
+                  <option value="NONE" ${currentRole === 'NONE' ? 'selected' : ''}>— No Role —</option>
+                  ${Object.values(ROLES).map(r => `<option value="${r}" ${currentRole === r ? 'selected' : ''}>${r.replace(/_/g, ' ')}</option>`).join('')}
+                </select>
+                ${currentRole !== 'NONE' ? `<button class="btn btn-sm btn-outline btn-remove-role" data-user-id="${u.id}" style="color:var(--danger);padding:6px 10px;font-size:12px"><i class="fa-solid fa-user-minus"></i> Remove</button>` : ''}
+              </div>
             </td>
           </tr>
-        `).join('');
+          `;
+        }).join('');
+        
         document.querySelectorAll('.role-select').forEach(sel => {
           sel.addEventListener('change', () => changeUserRole(sel));
+        });
+        document.querySelectorAll('.btn-remove-role').forEach(btn => {
+          btn.addEventListener('click', () => removeUserRoleHandler(btn.dataset.userId));
         });
         renderPagination('userPagination', currentPage, totalPages, loadUsers);
       } catch (e) {
         console.error('Failed to load users:', e);
-        tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Failed to load users. Check console (F12) for details.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Failed to load users. Check console (F12) for details.</td></tr>';
       }
     }
 
@@ -120,6 +142,12 @@
       const newRole = selectEl.value;
       const currentRole = selectEl.dataset.currentRole;
       if (newRole === currentRole) return;
+
+      if (newRole === 'NONE') {
+        selectEl.value = currentRole; // restore select value first
+        removeUserRoleHandler(userId);
+        return;
+      }
 
       const ok = await confirmDialog(
         'Change User Role',
@@ -134,10 +162,8 @@
       try {
         const currentUser = Session.getUser();
         await UserAPI.updateRole(userId, { role: newRole });
-        selectEl.dataset.currentRole = newRole;
-        const row = selectEl.closest('tr');
-        row.querySelector('.role-badge').textContent = newRole.replace(/_/g, ' ');
         toast('User role updated successfully', 'success');
+        loadUsers(currentPage);
 
         if (currentUser && userId == currentUser.id) {
           const refreshed = await UserAPI.getById(userId);
@@ -147,6 +173,30 @@
       } catch (e) {
         selectEl.value = currentRole;
         toast(e.response?.data?.message || 'Failed to update role', 'error');
+      }
+    }
+
+    async function removeUserRoleHandler(userId) {
+      const ok = await confirmDialog(
+        'Remove User Role',
+        `Are you sure you want to remove this user's role?`,
+        'Remove Role'
+      );
+      if (!ok) return;
+
+      try {
+        const currentUser = Session.getUser();
+        await UserAPI.removeRole(userId);
+        toast('User role removed successfully', 'success');
+        loadUsers(currentPage);
+
+        if (currentUser && userId == currentUser.id) {
+          const refreshed = await UserAPI.getById(userId);
+          const u = refreshed.data.data;
+          Session.set(Session.getToken(), Session.getRefresh(), { email: u.email, fullName: u.fullName, phone: u.phone, profileImage: u.profileImage, roles: u.roles, id: u.id });
+        }
+      } catch (e) {
+        toast(e.response?.data?.message || 'Failed to remove role', 'error');
       }
     }
 

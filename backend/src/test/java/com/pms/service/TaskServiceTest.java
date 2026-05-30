@@ -74,7 +74,11 @@ public class TaskServiceTest {
                 .deadline(LocalDate.now().plusDays(5))
                 .build();
 
-        User creator = User.builder().email("admin@example.com").build();
+        User creator = User.builder()
+                .id(1L)
+                .email("admin@example.com")
+                .roles(java.util.Set.of(com.pms.entity.Role.builder().name(com.pms.entity.enums.RoleName.ADMIN).build()))
+                .build();
         User assignee = User.builder().id(2L).email("dev@example.com").build();
         Project project = Project.builder().id(1L).title("Main Project").build();
         
@@ -114,9 +118,22 @@ public class TaskServiceTest {
     @Test
     public void testGetTaskById_Success() {
         // Arrange
-        Task task = Task.builder().id(20L).title("Some Task").build();
+        User currentUser = User.builder()
+                .id(1L)
+                .email("admin@example.com")
+                .roles(java.util.Set.of(com.pms.entity.Role.builder().name(com.pms.entity.enums.RoleName.ADMIN).build()))
+                .build();
+        Project project = Project.builder().id(1L).build();
+        Task task = Task.builder().id(20L).title("Some Task").project(project).build();
         TaskResponse response = TaskResponse.builder().id(20L).title("Some Task").build();
 
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn("admin@example.com");
+
+        when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(currentUser));
         when(taskRepository.findById(20L)).thenReturn(Optional.of(task));
         when(taskMapper.toResponse(task)).thenReturn(response);
 
@@ -141,11 +158,23 @@ public class TaskServiceTest {
     @Test
     public void testUpdateStatus_Success() {
         // Arrange
+        User currentUser = User.builder()
+                .id(1L)
+                .email("admin@example.com")
+                .roles(java.util.Set.of(com.pms.entity.Role.builder().name(com.pms.entity.enums.RoleName.ADMIN).build()))
+                .build();
         Project project = Project.builder().id(1L).build();
         Task task = Task.builder().id(1L).project(project).status(TaskStatus.TODO).build();
         Task updatedTask = Task.builder().id(1L).project(project).status(TaskStatus.IN_PROGRESS).build();
         TaskResponse response = TaskResponse.builder().id(1L).status(TaskStatus.IN_PROGRESS).build();
 
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn("admin@example.com");
+
+        when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(currentUser));
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(taskRepository.save(task)).thenReturn(updatedTask);
         

@@ -43,7 +43,7 @@
     </div>
   </div>
   <script type="module">
-    import { ProjectAPI, TaskAPI, MilestoneAPI, FileAPI } from '../assets/js/api.js';
+    import { ProjectAPI, TaskAPI, MilestoneAPI, FileAPI, InvitationAPI, UserAPI } from '../assets/js/api.js';
     import { Theme, Session, authGuard, initSidebar, statusBadge, priorityBadge, DateHelper, toast, formatSize, fileIconFA } from '../assets/js/utils.js';
 
     if (!authGuard()) throw new Error('Not authenticated');
@@ -61,34 +61,92 @@
       return params.get('id');
     }
 
+    async function inviteMember(projectId, teamMemberIds) {
+      let userOptions = {};
+      try {
+        const res = await UserAPI.getAll(0, 200);
+        const users = res.data.data?.content || res.data.data || [];
+        const availableUsers = users.filter(u => !teamMemberIds.includes(u.id));
+        
+        if (availableUsers.length === 0) {
+          toast('All available users are already in this team!', 'warning');
+          return;
+        }
+        
+        availableUsers.forEach(u => {
+          userOptions[u.id] = `${u.fullName || u.email} (${u.email})`;
+        });
+      } catch (e) {
+        toast('Failed to load users for invitation.', 'error');
+        return;
+      }
+
+      const { value: invitedUserId } = await Swal.fire({
+        title: 'Invite Team Member',
+        text: 'Select a user to invite to this project. They will receive an in-app notification.',
+        input: 'select',
+        inputOptions: userOptions,
+        inputPlaceholder: 'Select a user...',
+        confirmButtonText: 'Send Invitation',
+        showCancelButton: true,
+        confirmButtonColor: '#2563EB',
+        cancelButtonColor: '#94A3B8',
+        borderRadius: '16px',
+      });
+
+      if (!invitedUserId) return;
+
+      try {
+        await InvitationAPI.invite(projectId, invitedUserId);
+        toast('Invitation sent successfully!', 'success');
+        loadProject();
+      } catch (e) {
+        toast(e.response?.data?.message || 'Failed to send invitation', 'error');
+      }
+    }
+
     async function loadProject() {
       const id = getProjectId();
       if (!id) { document.getElementById('projectDetail').innerHTML = '<div class="text-muted">No project ID specified</div>'; return; }
       try {
         const res = await ProjectAPI.getById(id);
         const p = res.data.data;
+        
+        const currentUser = Session.getUser();
+        const isAdmin = currentUser && currentUser.roles && currentUser.roles.includes('ADMIN');
+        const isCreator = p.createdBy && currentUser && p.createdBy.id === currentUser.id;
+        const showInviteBtn = isAdmin || isCreator;
+        const teamMemberIds = p.team && p.team.members ? p.team.members.map(m => m.userId) : [];
+
         document.getElementById('projectDetail').innerHTML = `
-          <div class="card">
-            <div class="card-body">
+          <div class="card bg-white shadow-soft rounded-3xl overflow-hidden border-0">
+            <div class="card-body p-6">
               <div class="flex items-start justify-between mb-4">
                 <div>
-                  <h2 style="font-family:var(--font-display);font-size:24px;font-weight:800">${p.title || 'Untitled'}</h2>
-                  <p style="color:var(--text-secondary);margin-top:4px">${p.description || 'No description'}</p>
+                  <h2 style="font-family:var(--font-display);font-size:26px;font-weight:800;letter-spacing:-0.5px">${p.title || 'Untitled'}</h2>
+                  <p style="color:var(--text-secondary);margin-top:6px">${p.description || 'No description'}</p>
                 </div>
                 ${statusBadge(p.status)}
               </div>
-              <div class="project-progress-wrap mb-4">
-                <div class="project-progress-label"><span>Progress</span><span>${Math.round(p.progress || 0)}%</span></div>
-                <div class="progress"><div class="progress-bar ${(p.progress || 0) >= 100 ? 'success' : 'gradient'}" style="width:${p.progress || 0}%"></div></div>
+              <div class="project-progress-wrap mb-6">
+                <div class="project-progress-label flex justify-between text-sm font-semibold mb-2"><span>Progress</span><span class="text-primary">${Math.round(p.progress || 0)}%</span></div>
+                <div class="progress" style="height:8px;border-radius:99px;background-color:rgba(0,0,0,0.05)"><div class="progress-bar ${(p.progress || 0) >= 100 ? 'success' : 'gradient'}" style="width:${p.progress || 0}%;border-radius:99px;height:100%"></div></div>
               </div>
-              <div class="flex gap-6 text-sm">
-                <span><strong>Priority:</strong> ${priorityBadge(p.priority)}</span>
-                <span><strong>Start:</strong> ${DateHelper.format(p.startDate)}</span>
-                <span><strong>End:</strong> ${DateHelper.format(p.endDate)}</span>
-                <span><strong>Team:</strong> ${p.teamName || 'Not assigned'}</span>
+              <div class="flex flex-wrap justify-between items-center gap-4 pt-4 border-t" style="border-top:1px solid rgba(0,0,0,0.06)">
+                <div class="flex flex-wrap gap-6 text-sm">
+                  <span><strong class="text-secondary">Priority:</strong> ${priorityBadge(p.priority)}</span>
+                  <span><strong class="text-secondary">Start Date:</strong> ${DateHelper.format(p.startDate)}</span>
+                  <span><strong class="text-secondary">End Date:</strong> ${DateHelper.format(p.endDate)}</span>
+                  <span><strong class="text-secondary">Team:</strong> ${p.team ? p.team.name : 'Not assigned'}</span>
+                </div>
+                ${showInviteBtn ? `<button class="btn btn-primary btn-sm rounded-xl px-4 flex items-center gap-2" id="inviteMemberBtn"><i class="fa-solid fa-user-plus text-xs"></i> Invite Member</button>` : ''}
               </div>
             </div>
           </div>`;
+
+        if (showInviteBtn) {
+          document.getElementById('inviteMemberBtn').addEventListener('click', () => inviteMember(id, teamMemberIds));
+        }
       } catch (e) {
         document.getElementById('projectDetail').innerHTML = '<div class="text-muted">Failed to load project</div>';
       }

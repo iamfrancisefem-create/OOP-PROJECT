@@ -119,7 +119,9 @@
         const { token, refreshToken, id, email: userEmail, fullName, phone, roles } = res.data.data;
         Session.set(token, refreshToken, { id, email: userEmail, fullName, phone, roles });
         toast('Welcome back, ' + (fullName || 'User') + '!', 'success');
-        setTimeout(() => window.location.href = 'dashboard.html', 500);
+        const redirectUrl = localStorage.getItem('redirect_after_login') || 'dashboard.html';
+        localStorage.removeItem('redirect_after_login');
+        setTimeout(() => window.location.href = redirectUrl, 500);
       } catch (err) {
         const msg = err.response?.data?.message || 'Invalid email or password.';
         showAlert(alertEl, msg, 'error');

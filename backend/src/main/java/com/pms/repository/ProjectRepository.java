@@ -19,6 +19,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
+    @Query("SELECT p FROM Project p WHERE p.createdBy.id = :userId OR (p.team IS NOT NULL AND EXISTS (SELECT tm FROM TeamMember tm WHERE tm.team = p.team AND tm.user.id = :userId))")
+    Page<Project> findByUserAccess(@Param("userId") Long userId, Pageable pageable);
+
     Page<Project> findByCreatedBy(User createdBy, Pageable pageable);
 
     Page<Project> findByTeam(Team team, Pageable pageable);

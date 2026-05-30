@@ -50,11 +50,23 @@ public class ReportServiceImpl implements ReportService {
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
     private final ReportMapper reportMapper;
+    private final com.pms.repository.TeamMemberRepository teamMemberRepository;
 
     private User getCurrentAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
+    }
+
+    private void validateProjectAccess(Project project) {
+        User currentUser = getCurrentAuthenticatedUser();
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
+        boolean isCreator = project.getCreatedBy() != null && project.getCreatedBy().getId().equals(currentUser.getId());
+        boolean isTeamMember = project.getTeam() != null && teamMemberRepository.existsByTeamAndUser(project.getTeam(), currentUser);
+
+        if (!isAdmin && !isCreator && !isTeamMember) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied: You do not have permission to access reports for this project.");
+        }
     }
 
     @Override
@@ -63,6 +75,8 @@ public class ReportServiceImpl implements ReportService {
         User user = getCurrentAuthenticatedUser();
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
+
+        validateProjectAccess(project);
 
         byte[] reportContent;
         String fileName;
@@ -166,6 +180,9 @@ public class ReportServiceImpl implements ReportService {
     public Resource downloadReport(Long reportId) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report not found with ID: " + reportId));
+        
+        validateProjectAccess(report.getProject());
+        
         return fileStorageService.loadFileAsResource(report.getFileUrl());
     }
 
@@ -174,6 +191,8 @@ public class ReportServiceImpl implements ReportService {
     public PagedResponse<ReportResponse> getReportsByProject(Long projectId, Pageable pageable) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
+
+        validateProjectAccess(project);
 
         Page<Report> page = reportRepository.findByProject(project, pageable);
         List<ReportResponse> content = page.getContent().stream()

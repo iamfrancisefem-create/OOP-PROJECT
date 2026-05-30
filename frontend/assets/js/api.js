@@ -6,8 +6,7 @@
 
 import { Session, toast } from './utils.js';
 
-const RAILWAY_URL = 'https://oop-project-production.up.railway.app/api/v1';
-const BASE_URL = (typeof API_URL !== 'undefined' ? API_URL : RAILWAY_URL);
+const BASE_URL = (typeof API_URL !== 'undefined' ? API_URL : 'http://localhost:8080/api/v1');
 
 // ─── Create Axios Instance ───────────────────────────────
 const api = axios.create({
@@ -112,6 +111,9 @@ export const UserAPI = {
   updateRole(id, data) {
     return api.patch(`/users/${id}/role`, data);
   },
+  removeRole(id) {
+    return api.delete(`/users/${id}/role`);
+  },
 };
 
 // ─── Project Endpoints ───────────────────────────────────
@@ -123,6 +125,16 @@ export const ProjectAPI = {
   delete(id)               { return api.delete(`/projects/${id}`); },
   updateStatus(id, status) { return api.patch(`/projects/${id}/status`, null, { params: { status } }); },
   calculateProgress(id)    { return api.post(`/projects/${id}/calculate-progress`); },
+};
+
+// ─── Project Invitation Endpoints ─────────────────────────
+export const InvitationAPI = {
+  invite(projectId, invitedUserId) {
+    return api.post(`/projects/${projectId}/invite`, null, { params: { invitedUserId } });
+  },
+  accept(token) {
+    return api.post('/projects/invitations/accept', null, { params: { token } });
+  },
 };
 
 // ─── Task Endpoints ──────────────────────────────────────

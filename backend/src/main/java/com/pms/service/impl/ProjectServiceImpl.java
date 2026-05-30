@@ -63,19 +63,16 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public PagedResponse<ProjectResponse> getAllProjects(Pageable pageable) {
         User currentUser = getCurrentAuthenticatedUser();
-        Page<Project> projectsPage = projectRepository.findAll(pageable);
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
+        
+        Page<Project> projectsPage;
+        if (isAdmin) {
+            projectsPage = projectRepository.findAll(pageable);
+        } else {
+            projectsPage = projectRepository.findByUserAccess(currentUser.getId(), pageable);
+        }
+
         List<ProjectResponse> content = projectsPage.getContent().stream()
-                .filter(project -> {
-                    // creator
-                    if (project.getCreatedBy() != null && project.getCreatedBy().getId().equals(currentUser.getId())) {
-                        return true;
-                    }
-                    // team member
-                    if (project.getTeam() != null) {
-                        return teamMemberRepository.existsByTeamAndUser(project.getTeam(), currentUser);
-                    }
-                    return false;
-                })
                 .map(projectMapper::toResponse)
                 .toList();
 
@@ -94,14 +91,13 @@ public class ProjectServiceImpl implements ProjectService {
         User currentUser = getCurrentAuthenticatedUser();
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
-        boolean authorized = false;
-        if (project.getCreatedBy() != null && project.getCreatedBy().getId().equals(currentUser.getId())) {
-            authorized = true;
-        } else if (project.getTeam() != null) {
-            authorized = teamMemberRepository.existsByTeamAndUser(project.getTeam(), currentUser);
-        }
-        if (!authorized) {
-            throw new com.pms.exception.BadRequestException("Access denied to project");
+        
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
+        boolean isCreator = project.getCreatedBy() != null && project.getCreatedBy().getId().equals(currentUser.getId());
+        boolean isTeamMember = project.getTeam() != null && teamMemberRepository.existsByTeamAndUser(project.getTeam(), currentUser);
+
+        if (!isAdmin && !isCreator && !isTeamMember) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied to project");
         }
         return projectMapper.toResponse(project);
     }
@@ -109,8 +105,16 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public ProjectResponse updateProject(Long id, ProjectRequest request) {
+        User currentUser = getCurrentAuthenticatedUser();
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
+
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
+        boolean isCreator = project.getCreatedBy() != null && project.getCreatedBy().getId().equals(currentUser.getId());
+
+        if (!isAdmin && !isCreator) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the project creator or ADMIN can update this project");
+        }
 
         project.setTitle(request.getTitle());
         project.setDescription(request.getDescription());
@@ -134,10 +138,18 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public void deleteProject(Long id) {
-        if (!projectRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Project not found with ID: " + id);
+        User currentUser = getCurrentAuthenticatedUser();
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
+
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
+        boolean isCreator = project.getCreatedBy() != null && project.getCreatedBy().getId().equals(currentUser.getId());
+
+        if (!isAdmin && !isCreator) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the project creator or ADMIN can delete this project");
         }
-        projectRepository.deleteById(id);
+        
+        projectRepository.delete(project);
     }
 
     @Override

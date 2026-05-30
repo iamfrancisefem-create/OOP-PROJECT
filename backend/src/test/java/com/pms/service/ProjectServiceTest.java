@@ -109,9 +109,21 @@ public class ProjectServiceTest {
     @Test
     public void testGetProjectById_Success() {
         // Arrange
+        User currentUser = User.builder()
+                .id(1L)
+                .email("admin@example.com")
+                .roles(java.util.Set.of(com.pms.entity.Role.builder().name(com.pms.entity.enums.RoleName.ADMIN).build()))
+                .build();
         Project project = Project.builder().id(5L).title("Find Me").build();
         ProjectResponse response = ProjectResponse.builder().id(5L).title("Find Me").build();
 
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn("admin@example.com");
+
+        when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(currentUser));
         when(projectRepository.findById(5L)).thenReturn(Optional.of(project));
         when(projectMapper.toResponse(project)).thenReturn(response);
 
@@ -127,6 +139,19 @@ public class ProjectServiceTest {
     @Test
     public void testGetProjectById_NotFound_ShouldThrowException() {
         // Arrange
+        User currentUser = User.builder()
+                .id(1L)
+                .email("admin@example.com")
+                .roles(java.util.Set.of(com.pms.entity.Role.builder().name(com.pms.entity.enums.RoleName.ADMIN).build()))
+                .build();
+
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn("admin@example.com");
+
+        when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(currentUser));
         when(projectRepository.findById(99L)).thenReturn(Optional.empty());
 
         // Act & Assert

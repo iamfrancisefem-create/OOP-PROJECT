@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accept Project Invitation — ProjectFlow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/forms.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #EEF2F6 0%, #E3E9F1 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    
+    [data-theme="dark"] body {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+    }
+
+    .invitation-container {
+      width: 100%;
+      max-width: 520px;
+      padding: 20px;
+    }
+
+    .invitation-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 28px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+      padding: 40px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    [data-theme="dark"] .invitation-card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .brand-logo {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 30px;
+      display: inline-block;
+      letter-spacing: -1px;
+    }
+
+    .invite-icon-wrap {
+      width: 80px;
+      height: 80px;
+      border-radius: 24px;
+      background: rgba(37, 99, 235, 0.1);
+      color: #2563EB;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 24px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.2); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(37, 99, 235, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+    }
+
+    .invitation-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1E293B;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    [data-theme="dark"] .invitation-title {
+      color: #F8FAFC;
+    }
+
+    .invitation-desc {
+      font-size: 15px;
+      color: #64748B;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    [data-theme="dark"] .invitation-desc {
+      color: #94A3B8;
+    }
+
+    .project-preview-box {
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 32px;
+      text-align: left;
+    }
+
+    [data-theme="dark"] .project-preview-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .preview-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94A3B8;
+      margin-bottom: 6px;
+    }
+
+    .preview-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1E293B;
+      margin-bottom: 4px;
+    }
+
+    [data-theme="dark"] .preview-title {
+      color: #F8FAFC;
+    }
+
+    .preview-desc {
+      font-size: 13px;
+      color: #64748B;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    [data-theme="dark"] .preview-desc {
+      color: #94A3B8;
+    }
+
+    .btn-accept {
+      width: 100%;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.15);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-accept:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
+      background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
+    }
+
+    .btn-accept:active {
+      transform: translateY(0);
+    }
+
+    .btn-decline {
+      margin-top: 16px;
+      display: inline-block;
+      color: #64748B;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .btn-decline:hover {
+      color: #475569;
+    }
+
+    [data-theme="dark"] .btn-decline:hover {
+      color: #CBD5E1;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="invitation-container">
+    <div class="invitation-card">
+      <div class="brand-logo">ProjectFlow</div>
+      <div class="invite-icon-wrap">
+        <i class="fa-solid fa-envelope-open-text"></i>
+      </div>
+      <h3 class="invitation-title">Project Collaboration Invitation</h3>
+      <p class="invitation-desc">You have been securely shared a project to collaborate on. Once accepted, you will gain full task, file, and milestones access.</p>
+      
+      <div class="project-preview-box">
+        <div class="preview-label">Project Invitation Link</div>
+        <div class="preview-title" id="projectName">Loading details...</div>
+        <div class="preview-desc" id="projectDescription">Validating token...</div>
+      </div>
+
+      <button id="acceptBtn" class="btn-accept">
+        <i class="fa-solid fa-circle-check"></i> Accept & Join Project
+      </button>
+      
+      <a href="dashboard.html" class="btn-decline">Go to Dashboard</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { InvitationAPI } from '../assets/js/api.js';
+    import { Theme, Session, authGuard, toast } from '../assets/js/utils.js';
+
+    if (!authGuard()) {
+      // Not authenticated, redirect to login but save the current redirect url
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      if (token) {
+        localStorage.setItem('redirect_after_login', window.location.pathname + window.location.search);
+      }
+      window.location.href = '/pages/login.html';
+      throw new Error('Not authenticated');
+    }
+    
+    Theme.init();
+
+    function getInvitationToken() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('token');
+    }
+
+    const token = getInvitationToken();
+    if (!token) {
+      document.getElementById('projectName').textContent = 'Invalid Invitation Link';
+      document.getElementById('projectDescription').textContent = 'No invitation token found in the url query params.';
+      document.getElementById('acceptBtn').disabled = true;
+      document.getElementById('acceptBtn').style.opacity = 0.5;
+    } else {
+      document.getElementById('projectName').textContent = 'Pending Invitation';
+      document.getElementById('projectDescription').textContent = 'Click below to accept and gain instant access to tasks, team discussions, and files.';
+    }
+
+    document.getElementById('acceptBtn').addEventListener('click', async () => {
+      if (!token) return;
+      const btn = document.getElementById('acceptBtn');
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Accepting...';
+
+      try {
+        const res = await InvitationAPI.accept(token);
+        const inviteInfo = res.data.data;
+        const projectId = inviteInfo.project.id;
+        
+        toast('Invitation accepted successfully!', 'success');
+        
+        setTimeout(() => {
+          window.location.href = `project-details.html?id=${projectId}`;
+        }, 1500);
+      } catch (e) {
+        toast(e.response?.data?.message || 'Failed to accept invitation. The link may have expired or is invalid.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    });
+  </script>
+</body>
+</html>
