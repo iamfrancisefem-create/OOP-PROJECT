@@ -10,9 +10,8 @@ spring:
   # PostgreSQL Datasource
   # ---------------------------------------------------------------------------
   datasource:
-    url: jdbc:postgresql://localhost:5432/project_management
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:xxx3@$}
+    username: postgres
+    password: "${DB_PASSWORD:testpwd}"
     driver-class-name: org.postgresql.Driver
 
   # ---------------------------------------------------------------------------

@@ -4,17 +4,17 @@
 # Activate with: --spring.profiles.active=dev
 
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/project_management
   jpa:
     hibernate:
       ddl-auto: update            # Auto-create/update tables from entities
     show-sql: true
 
-  flyway:
-    enabled: false                # Disable migrations in dev; use ddl-auto
-
 logging:
   level:
     com.pms: DEBUG
+    url: "jdbc:postgresql://localhost:5432/project_management"
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
