@@ -23,6 +23,8 @@ import java.time.LocalDateTime;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity
+// OOP — ASSOCIATION: @ManyToOne references to both Team and User (join entity for many-to-many with metadata)
 public class TeamMember extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -6,6 +6,7 @@ import com.pms.entity.Message;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+// OOP — ABSTRACTION: MapStruct generates Message ↔ MessageResponse converter
 @Mapper(componentModel = "spring", uses = {UserMapper.class})
 public interface MessageMapper {
 

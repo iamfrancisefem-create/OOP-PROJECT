@@ -3,8 +3,10 @@ package com.pms.service.impl;
 import com.pms.dto.response.AnalyticsResponse;
 import com.pms.dto.response.DashboardResponse;
 import com.pms.entity.AuditLog;
+import com.pms.entity.User;
 import com.pms.entity.enums.TaskPriority;
 import com.pms.entity.enums.TaskStatus;
+import com.pms.exception.ResourceNotFoundException;
 import com.pms.repository.AuditLogRepository;
 import com.pms.repository.ProjectRepository;
 import com.pms.repository.TaskRepository;
@@ -15,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +26,9 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+// OOP — INHERITANCE: implements DashboardService interface
+// OOP — ENCAPSULATION: hides aggregation logic for dashboard stats
+// OOP — COMPOSITION: composed of ProjectRepository, TaskRepository, UserRepository, AuditLogRepository, TeamMemberRepository
 public class DashboardServiceImpl implements DashboardService {
 
     private final ProjectRepository projectRepository;
@@ -31,19 +37,28 @@ public class DashboardServiceImpl implements DashboardService {
     private final AuditLogRepository auditLogRepository;
     private final TeamMemberRepository teamMemberRepository;
 
+    private User getCurrentAuthenticatedUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
+    }
+
     @Override
     @Transactional(readOnly = true)
     public DashboardResponse getDashboardStats() {
-        long totalProjects = projectRepository.count();
-        long totalMembers = teamMemberRepository.count();
-        long completedTasks = taskRepository.countByStatus(TaskStatus.DONE);
+        User currentUser = getCurrentAuthenticatedUser();
+        Long userId = currentUser.getId();
+
+        long totalProjects = projectRepository.countByUserAccess(userId);
+        long totalMembers = teamMemberRepository.countDistinctUsersByUserAccess(userId);
+        long completedTasks = taskRepository.countByStatusAndUserAccess(TaskStatus.DONE, userId);
         
-        long todoTasks = taskRepository.countByStatus(TaskStatus.TODO);
-        long inProgressTasks = taskRepository.countByStatus(TaskStatus.IN_PROGRESS);
-        long testingTasks = taskRepository.countByStatus(TaskStatus.TESTING);
+        long todoTasks = taskRepository.countByStatusAndUserAccess(TaskStatus.TODO, userId);
+        long inProgressTasks = taskRepository.countByStatusAndUserAccess(TaskStatus.IN_PROGRESS, userId);
+        long testingTasks = taskRepository.countByStatusAndUserAccess(TaskStatus.TESTING, userId);
         long pendingTasks = todoTasks + inProgressTasks + testingTasks;
 
-        long overdueTasks = taskRepository.countOverdueTasks(LocalDate.now());
+        long overdueTasks = taskRepository.countOverdueTasksByUserAccess(userId, LocalDate.now());
 
         long totalTasks = completedTasks + pendingTasks;
         double productivity = totalTasks > 0 ? ((double) completedTasks / totalTasks) * 100.0 : 0.0;
@@ -56,7 +71,7 @@ public class DashboardServiceImpl implements DashboardService {
 
         Map<String, Long> tasksByPriority = new HashMap<>();
         for (TaskPriority priority : TaskPriority.values()) {
-            long count = taskRepository.countByPriority(priority);
+            long count = taskRepository.countByPriorityAndUserAccess(priority, userId);
             tasksByPriority.put(priority.name(), count);
         }
 
@@ -75,6 +90,9 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional(readOnly = true)
     public AnalyticsResponse getAnalytics() {
+        User currentUser = getCurrentAuthenticatedUser();
+        Long userId = currentUser.getId();
+
         // 1. Fetch recent activities from Audit Logs
         Page<AuditLog> auditLogs = auditLogRepository.findAll(
                 PageRequest.of(0, 10, Sort.by("createdAt").descending())
@@ -94,14 +112,15 @@ public class DashboardServiceImpl implements DashboardService {
                 })
                 .toList();
 
-        // 2. Mock some beautiful team performance statistics
+        // 2. Team performance statistics (scoped to user's projects)
         List<Map<String, Object>> teamPerformance = new ArrayList<>();
         userRepository.findAll(PageRequest.of(0, 5)).getContent().forEach(user -> {
-            Map<String, Object> performance = new HashMap<>();
-            long userTotal = taskRepository.countByAssignedTo(user);
-            long userDone = taskRepository.countByAssignedToAndStatus(user, TaskStatus.DONE);
+            long userTotal = taskRepository.countByAssignedToScoped(user, userId);
+            long userDone = taskRepository.countByAssignedToAndStatusScoped(user, TaskStatus.DONE, userId);
+            if (userTotal == 0 && userDone == 0) return;
             double score = userTotal > 0 ? ((double) userDone / userTotal) * 100.0 : 0.0;
             
+            Map<String, Object> performance = new HashMap<>();
             performance.put("userId", user.getId());
             performance.put("userName", user.getFullName());
             performance.put("totalTasks", userTotal);
@@ -110,14 +129,15 @@ public class DashboardServiceImpl implements DashboardService {
             teamPerformance.add(performance);
         });
 
-        // 3. Workload distribution
+        // 3. Workload distribution (scoped to user's projects)
         List<Map<String, Object>> workloadDistribution = new ArrayList<>();
         userRepository.findAll(PageRequest.of(0, 5)).getContent().forEach(user -> {
-            Map<String, Object> workload = new HashMap<>();
-            long todo = taskRepository.countByAssignedToAndStatus(user, TaskStatus.TODO);
-            long inProgress = taskRepository.countByAssignedToAndStatus(user, TaskStatus.IN_PROGRESS);
-            long testing = taskRepository.countByAssignedToAndStatus(user, TaskStatus.TESTING);
+            long todo = taskRepository.countByAssignedToAndStatusScoped(user, TaskStatus.TODO, userId);
+            long inProgress = taskRepository.countByAssignedToAndStatusScoped(user, TaskStatus.IN_PROGRESS, userId);
+            long testing = taskRepository.countByAssignedToAndStatusScoped(user, TaskStatus.TESTING, userId);
+            if (todo == 0 && inProgress == 0 && testing == 0) return;
 
+            Map<String, Object> workload = new HashMap<>();
             workload.put("userName", user.getFullName());
             workload.put("todo", todo);
             workload.put("inProgress", inProgress);

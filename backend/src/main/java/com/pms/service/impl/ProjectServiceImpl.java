@@ -27,6 +27,9 @@ import com.pms.repository.TeamMemberRepository;
 
 @Service
 @RequiredArgsConstructor
+// OOP — INHERITANCE: implements ProjectService interface
+// OOP — ENCAPSULATION: hides project CRUD and business logic from callers
+// OOP — COMPOSITION: composed of ProjectRepository, TeamRepository, UserRepository, TaskRepository, ProjectMapper, TeamMemberRepository
 public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepository;
@@ -63,14 +66,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public PagedResponse<ProjectResponse> getAllProjects(Pageable pageable) {
         User currentUser = getCurrentAuthenticatedUser();
-        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
-        
-        Page<Project> projectsPage;
-        if (isAdmin) {
-            projectsPage = projectRepository.findAll(pageable);
-        } else {
-            projectsPage = projectRepository.findByUserAccess(currentUser.getId(), pageable);
-        }
+        Page<Project> projectsPage = projectRepository.findByUserAccess(currentUser.getId(), pageable);
 
         List<ProjectResponse> content = projectsPage.getContent().stream()
                 .map(projectMapper::toResponse)
@@ -155,8 +151,18 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public ProjectResponse updateStatus(Long id, ProjectStatus status) {
+        User currentUser = getCurrentAuthenticatedUser();
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
+
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
+        boolean isCreator = project.getCreatedBy() != null && project.getCreatedBy().getId().equals(currentUser.getId());
+        boolean isTeamMember = project.getTeam() != null && teamMemberRepository.existsByTeamAndUser(project.getTeam(), currentUser);
+
+        if (!isAdmin && !isCreator && !isTeamMember) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied to update project status");
+        }
+
         project.setStatus(status);
         Project updatedProject = projectRepository.save(project);
         return projectMapper.toResponse(updatedProject);
@@ -165,8 +171,17 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public Double calculateProgress(Long id) {
+        User currentUser = getCurrentAuthenticatedUser();
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
+
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
+        boolean isCreator = project.getCreatedBy() != null && project.getCreatedBy().getId().equals(currentUser.getId());
+        boolean isTeamMember = project.getTeam() != null && teamMemberRepository.existsByTeamAndUser(project.getTeam(), currentUser);
+
+        if (!isAdmin && !isCreator && !isTeamMember) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied to calculate project progress");
+        }
 
         long totalTasks = taskRepository.countByProject(project);
         if (totalTasks == 0) {

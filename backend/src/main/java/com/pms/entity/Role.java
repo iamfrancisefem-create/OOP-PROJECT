@@ -18,6 +18,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — ENCAPSULATION: Bundles id and name into a single entity with private fields
 public class Role {
 
     @Id

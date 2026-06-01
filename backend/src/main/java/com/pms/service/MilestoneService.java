@@ -6,6 +6,7 @@ import com.pms.dto.response.MilestoneResponse;
 import com.pms.entity.enums.MilestoneStatus;
 import org.springframework.data.domain.Pageable;
 
+// OOP — ABSTRACTION: Contract for milestone CRUD and status transitions
 public interface MilestoneService {
     MilestoneResponse createMilestone(MilestoneRequest request);
     PagedResponse<MilestoneResponse> getAllMilestones(Pageable pageable);

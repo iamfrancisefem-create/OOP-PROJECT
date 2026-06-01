@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity (inherits id, createdAt, updatedAt)
+// OOP — POLYMORPHISM: implements UserDetails (provides specific implementations of Spring Security's authentication contract)
 public class User extends BaseEntity implements UserDetails {
 
     @Column(name = "full_name", nullable = false, length = 100)
@@ -63,6 +65,7 @@ public class User extends BaseEntity implements UserDetails {
     // Relationships                                                      //
     // ------------------------------------------------------------------ //
 
+    // OOP — ASSOCIATION: @ManyToMany relationship with Role entity
     /** Roles are eagerly fetched because they are needed on every request. */
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -73,6 +76,7 @@ public class User extends BaseEntity implements UserDetails {
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
 
+    // OOP — ASSOCIATION: @OneToMany relationships — a User can have many Tasks and Notifications
     @OneToMany(mappedBy = "assignedTo", fetch = FetchType.LAZY)
     @Builder.Default
     private List<Task> assignedTasks = new ArrayList<>();

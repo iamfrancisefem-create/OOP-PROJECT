@@ -3,6 +3,7 @@ package com.pms.entity.enums;
 /**
  * Lifecycle states for a {@link com.pms.entity.Project}.
  */
+// OOP — ENCAPSULATION: defines fixed set of constants for ProjectStatus: project lifecycle states
 public enum ProjectStatus {
 
     /** Newly created, not yet started. */

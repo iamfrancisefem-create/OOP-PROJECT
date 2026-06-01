@@ -13,6 +13,8 @@ import java.util.List;
  * Repository for {@link FileUpload} entities.
  */
 @Repository
+// OOP — INHERITANCE: extends JpaRepository
+// OOP — ABSTRACTION: abstracts file upload versioning queries
 public interface FileUploadRepository extends JpaRepository<FileUpload, Long> {
 
     Page<FileUpload> findByProject(Project project, Pageable pageable);

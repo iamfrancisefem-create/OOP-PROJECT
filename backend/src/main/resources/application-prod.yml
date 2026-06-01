@@ -8,6 +8,11 @@ server:
   port: ${PORT:8080}                  # Railway provides PORT env var
 
 spring:
+  datasource:
+    username: postgres
+    password: "${DB_PASSWORD:testpwd}"
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: none                   # Flyway manages schema; skip Hibernate validation

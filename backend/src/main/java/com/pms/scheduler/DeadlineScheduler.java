@@ -15,6 +15,8 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+// OOP — ENCAPSULATION: hides deadline-checking logic behind @Scheduled methods
+// OOP — COMPOSITION: composed of TaskRepository and NotificationService
 public class DeadlineScheduler {
 
     private final TaskRepository taskRepository;

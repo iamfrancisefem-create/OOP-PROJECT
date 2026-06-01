@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Service
+// OOP — ENCAPSULATION: Hides JWT creation, parsing, and validation logic behind public methods (generateToken, isTokenValid, extractUsername)
+// OOP — ABSTRACTION: Simplifies JWT operations — callers don't need to know about signing keys, claims parsing, or token structure
 public class JwtService {
 
     @Value("${jwt.secret}")

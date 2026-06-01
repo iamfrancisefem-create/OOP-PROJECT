@@ -2,13 +2,19 @@ import { Session, toast } from './utils.js';
 
 const WS_BASE = 'ws://localhost:8080/ws';
 
+// ═══════════════════════════════════════════════════════════════
+// OOP — CLASS: ChatSocket (ENCAPSULATION via constructor closure)
+// OOP — ABSTRACTION: Hides WebSocket raw API behind simple methods
+// ═══════════════════════════════════════════════════════════════
 class ChatSocket {
+  // ENCAPSULATION — internal state hidden from outside world
   constructor() {
-    this.ws = null;
-    this.reconnectTimer = null;
-    this.listeners = new Map();
+    this.ws = null;              // private: WebSocket connection
+    this.reconnectTimer = null;  // private: reconnect timeout handle
+    this.listeners = new Map();  // private: event → callbacks
   }
 
+  // ABSTRACTION — wraps raw WebSocket connect + token injection
   connect(path = '/chat') {
     if (this.ws?.readyState === WebSocket.OPEN) return;
     const token = Session.getToken();
@@ -47,6 +53,7 @@ class ChatSocket {
     }
   }
 
+  // ABSTRACTION — cleanly tears down connection and timers
   disconnect() {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
@@ -58,6 +65,7 @@ class ChatSocket {
     }
   }
 
+  // ABSTRACTION — sends data, auto-serializes objects
   send(data) {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(typeof data === 'string' ? data : JSON.stringify(data));
@@ -66,22 +74,26 @@ class ChatSocket {
     return false;
   }
 
+  // POLYMORPHISM — event-name-driven dispatch (same interface, different events)
   on(event, callback) {
     if (!this.listeners.has(event)) this.listeners.set(event, []);
     this.listeners.get(event).push(callback);
     return () => this.off(event, callback);
   }
 
+  // COMPOSITION — holds a Map of callback arrays; removing from composition
   off(event, callback) {
     const cbs = this.listeners.get(event);
     if (cbs) this.listeners.set(event, cbs.filter(cb => cb !== callback));
   }
 
+  // ABSTRACTION — internal dispatch abstracts iteration over listeners
   _emit(event, data) {
     const cbs = this.listeners.get(event);
     if (cbs) cbs.forEach(cb => cb(data));
   }
 
+  // ENCAPSULATION — auto-reconnect logic hidden inside the class
   _scheduleReconnect(path) {
     if (this.reconnectTimer) return;
     this.reconnectTimer = setTimeout(() => {
@@ -92,11 +104,14 @@ class ChatSocket {
   }
 }
 
+// OOP — INSTANTIATION: Singleton instance of ChatSocket
 export const chatSocket = new ChatSocket();
 
+// OOP — INSTANTIATION: New instance every call (not singleton)
 export function connectNotificationSocket() {
-  const notifSocket = new ChatSocket();
+  const notifSocket = new ChatSocket(); // ⬅ new ChatSocket instance
   notifSocket.connect('/notifications');
+  // POLYMORPHISM — same .on() interface, different callback behaviour
   notifSocket.on('message', (data) => {
     toast(data.title || data.message || 'New notification', 'info');
   });

@@ -18,6 +18,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity
+// OOP — ASSOCIATION: @ManyToOne with Project and User (uploadedBy)
 public class FileUpload extends BaseEntity {
 
     @Column(name = "file_name", nullable = false, length = 255)

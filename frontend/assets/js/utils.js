@@ -17,7 +17,7 @@ export const TASK_STATUS = { TODO: 'TODO', IN_PROGRESS: 'IN_PROGRESS', TESTING: 
 export const TASK_PRIORITY = { LOW: 'LOW', MEDIUM: 'MEDIUM', HIGH: 'HIGH', URGENT: 'URGENT' };
 export const PROJECT_STATUS = { NEW: 'NEW', ACTIVE: 'ACTIVE', ON_HOLD: 'ON_HOLD', COMPLETED: 'COMPLETED', CANCELLED: 'CANCELLED' };
 
-// ─── Session / Auth State ────────────────────────────────
+// ─── Session / Auth State (ENCAPSULATION — bundles auth state + accessor methods) ──
 export const Session = {
   set(token, refreshToken, user) {
     sessionStorage.setItem('pms_token', token);
@@ -54,7 +54,7 @@ export function applyRoleGating() {
   });
 }
 
-// ─── Theme ───────────────────────────────────────────────
+// ─── Theme (ENCAPSULATION — state + behaviour in a single object) ──
 export const Theme = {
   STORAGE_KEY: 'pms_theme',
   get()  { return localStorage.getItem(this.STORAGE_KEY) || 'light'; },
@@ -63,7 +63,7 @@ export const Theme = {
   init()   { document.documentElement.setAttribute('data-theme', this.get()); },
 };
 
-// ─── Validators ──────────────────────────────────────────
+// ─── Validators (ENCAPSULATION — validation logic grouped) ──
 export const Validators = {
   email(val) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim()); },
   required(val) { return val !== null && val !== undefined && String(val).trim().length > 0; },
@@ -87,7 +87,7 @@ export const Validators = {
   },
 };
 
-// ─── Form Validation Helper ──────────────────────────────
+// ─── Form Validation Helper (COMPOSITION — uses Validators internally) ──
 export function validateForm(rules) {
   let valid = true;
   for (const [selector, checks] of Object.entries(rules)) {
@@ -114,7 +114,7 @@ export function validateForm(rules) {
   return valid;
 }
 
-// ─── Toast Notifications (Toastify) ─────────────────────
+// ─── Toast Notifications (ABSTRACTION — wraps Toastify library) ──
 export function toast(message, type = 'info') {
   const colors = {
     success: '#10B981', error: '#EF4444', warning: '#F59E0B', info: '#2563EB',
@@ -134,7 +134,7 @@ export function toast(message, type = 'info') {
   }
 }
 
-// ─── SweetAlert2 Confirm ─────────────────────────────────
+// ─── SweetAlert2 Confirm (ABSTRACTION — wraps Swal.fire complexity) ──
 export async function confirmDialog(title, text, confirmText = 'Confirm', type = 'warning') {
   if (!window.Swal) return true;
   const result = await Swal.fire({
@@ -151,7 +151,7 @@ export async function confirmDialog(title, text, confirmText = 'Confirm', type =
   return result.isConfirmed;
 }
 
-// ─── Date & Time Helpers ─────────────────────────────────
+// ─── Date & Time Helpers (ENCAPSULATION — date logic bundled in one object) ──
 export const DateHelper = {
   format(iso) {
     if (!iso) return '—';
@@ -293,7 +293,7 @@ export function debounce(fn, delay = 300) {
   return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
 }
 
-// ─── Modal Helpers ───────────────────────────────────────
+// ─── Modal Helpers (ABSTRACTION — hide DOM manipulation behind simple calls) ──
 export function openModal(id) {
   const el = document.getElementById(id);
   if (el) { el.classList.add('open'); document.body.style.overflow = 'hidden'; }
@@ -310,7 +310,7 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 window.closeAllModals = closeAllModals;
 
-// ─── Sidebar Rendering ───────────────────────────────────
+// ─── Sidebar Rendering (ASSOCIATION — composes Theme, Session, applyRoleGating) ──
 export function initSidebar(activeLink) {
   const user = Session.getUser();
   if (!user) return;
@@ -343,9 +343,21 @@ export function initSidebar(activeLink) {
     if (adminLink)  adminLink.style.display  = '';
   }
 
+  // Sidebar toggle (desktop collapse)
+  const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+  if (sidebarToggleBtn && sidebar && !sidebar.classList.contains('sidebar-permanent')) {
+    sidebarToggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      document.body.classList.toggle('sidebar-collapsed');
+      const icon = sidebarToggleBtn.querySelector('i');
+      if (icon) {
+        icon.className = sidebar.classList.contains('collapsed') ? 'fa-solid fa-bars' : 'fa-solid fa-bars-staggered';
+      }
+    });
+  }
+
   // Mobile menu toggle
   const menuBtn = document.querySelector('.btn-menu-toggle');
-  const sidebar  = document.querySelector('.sidebar');
   const overlay  = document.querySelector('.sidebar-overlay');
   if (menuBtn && sidebar) {
     menuBtn.addEventListener('click', () => {
@@ -378,6 +390,11 @@ export function initSidebar(activeLink) {
   if (notifBell && notifDropdown) {
     notifBell.addEventListener('click', e => {
       e.stopPropagation();
+      const rect = notifBell.getBoundingClientRect();
+      notifDropdown.style.position = 'fixed';
+      notifDropdown.style.top = (rect.bottom + 8) + 'px';
+      notifDropdown.style.right = (window.innerWidth - rect.right) + 'px';
+      notifDropdown.style.marginTop = '0';
       notifDropdown.classList.toggle('open');
     });
   }
@@ -395,7 +412,6 @@ export function initSidebar(activeLink) {
     menu.className = 'dropdown-panel';
     menu.id = 'profileDropdown';
     menu.style.width = '200px';
-    menu.style.right = '0';
     menu.innerHTML = `
       <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
         <div style="font-weight:600;font-size:14px">${user.fullName || user.email}</div>
@@ -411,6 +427,11 @@ export function initSidebar(activeLink) {
 
     profileAvatar.addEventListener('click', e => {
       e.stopPropagation();
+      const rect = profileAvatar.getBoundingClientRect();
+      menu.style.position = 'fixed';
+      menu.style.top = (rect.bottom + 8) + 'px';
+      menu.style.right = (window.innerWidth - rect.right) + 'px';
+      menu.style.marginTop = '0';
       menu.classList.toggle('open');
     });
 
@@ -440,7 +461,7 @@ export function initSidebar(activeLink) {
   });
 }
 
-// ─── Guard — redirect to login if not authenticated ──────
+// ─── Guard — redirect to login if not authenticated (ENCAPSULATION — wraps auth check) ──
 export function authGuard() {
   if (!Session.isLoggedIn()) {
     window.location.href = '/pages/login.html';
@@ -449,7 +470,7 @@ export function authGuard() {
   return true;
 }
 
-// ─── Sanitize HTML (XSS prevention) ─────────────────────
+// ─── Sanitize HTML (XSS prevention) (ENCAPSULATION — input sanitization hidden) ──
 export function sanitize(str) {
   const div = document.createElement('div');
   div.appendChild(document.createTextNode(String(str)));

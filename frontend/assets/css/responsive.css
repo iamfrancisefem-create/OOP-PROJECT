@@ -1,12 +1,15 @@
 /* ============================================================
-   PMS — Responsive Stylesheet
-   responsive.css | Breakpoints: 1200, 992, 768, 576px
+   PMS — Responsive Breakpoints
    ============================================================ */
 
-/* ─── 1200px — Large Desktop ────────────────────────────── */
+/* 1200px and below */
 @media (max-width: 1200px) {
-  .stats-grid { grid-template-columns: repeat(3, 1fr); }
-  .kanban-board { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .grid-4 {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 /* ─── 992px — Tablet Landscape ─────────────────────────── */
@@ -67,7 +70,7 @@
     scroll-snap-align: start;
   }
 
-  .chat-layout { grid-template-columns: 1fr; }
+  .chat-layout { grid-template-columns: 1fr; height: calc(100vh - 200px); max-height: calc(100vh - 200px); }
   .chat-sidebar {
     display: none;
     position: fixed;

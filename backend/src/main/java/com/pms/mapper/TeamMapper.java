@@ -6,6 +6,7 @@ import com.pms.entity.Team;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+// OOP — ABSTRACTION: MapStruct generates Team ↔ TeamResponse converter
 @Mapper(componentModel = "spring", uses = {UserMapper.class})
 public interface TeamMapper {
 

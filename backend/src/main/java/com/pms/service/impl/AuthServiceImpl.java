@@ -36,6 +36,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+// OOP — INHERITANCE: implements AuthService (realises the contract)
+// OOP — ENCAPSULATION: hides authentication logic (password hashing, token generation, account lockout) inside service methods
+// OOP — COMPOSITION: composed of UserRepository, RoleRepository, PasswordEncoder, JwtService, AuthenticationManager, UserMapper, JavaMailSender
 public class AuthServiceImpl implements AuthService {
 
     private static final int MAX_FAILED_ATTEMPTS = 5;

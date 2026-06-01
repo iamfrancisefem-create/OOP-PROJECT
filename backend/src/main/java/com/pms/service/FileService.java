@@ -6,6 +6,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
+// OOP — ABSTRACTION: Contract for file upload, download, and deletion
 public interface FileService {
     FileUploadResponse uploadFile(Long projectId, MultipartFile file);
     Resource downloadFile(Long fileId);

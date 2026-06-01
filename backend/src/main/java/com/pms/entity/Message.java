@@ -19,6 +19,8 @@ import java.time.LocalDateTime;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity
+// OOP — ASSOCIATION: @ManyToOne with sender and receiver (both are User entities)
 public class Message extends BaseEntity {
 
     @Column(nullable = false, columnDefinition = "TEXT")

@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/projects")
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides project invitation REST endpoints
+// OOP — COMPOSITION: composed of ProjectInvitationService
 public class ProjectInvitationController {
 
     private final ProjectInvitationService invitationService;

@@ -6,6 +6,7 @@ import com.pms.entity.Task;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+// OOP — ABSTRACTION: MapStruct generates Task ↔ TaskResponse converter
 @Mapper(componentModel = "spring", uses = {UserMapper.class})
 public interface TaskMapper {
 

@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — ENCAPSULATION: private fields with Lombok @Data — data carrier for API layer
 public class TaskResponse {
     private Long id;
     private String title;

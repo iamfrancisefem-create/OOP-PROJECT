@@ -25,6 +25,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+// OOP — INHERITANCE: implements TaskService interface
+// OOP — ENCAPSULATION: hides task CRUD, status transitions, and assignment logic
+// OOP — COMPOSITION: composed of TaskRepository, ProjectRepository, UserRepository, TaskMapper, TeamMemberRepository
 public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
@@ -89,7 +92,8 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public PagedResponse<TaskResponse> getAllTasks(Pageable pageable) {
-        Page<Task> tasksPage = taskRepository.findAll(pageable);
+        User currentUser = getCurrentAuthenticatedUser();
+        Page<Task> tasksPage = taskRepository.findByUserAccess(currentUser.getId(), pageable);
         List<TaskResponse> content = tasksPage.getContent().stream()
                 .map(taskMapper::toResponse)
                 .toList();
@@ -229,7 +233,16 @@ public class TaskServiceImpl implements TaskService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
         Page<Task> tasksPage = taskRepository.findByAssignedTo(user, pageable);
+
         List<TaskResponse> content = tasksPage.getContent().stream()
+                .filter(task -> {
+                    try {
+                        validateProjectAccess(task.getProject());
+                        return true;
+                    } catch (org.springframework.security.access.AccessDeniedException e) {
+                        return false;
+                    }
+                })
                 .map(taskMapper::toResponse)
                 .toList();
 
@@ -245,7 +258,8 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public List<TaskResponse> getOverdueTasks() {
-        List<Task> overdueTasks = taskRepository.findOverdueTasks(LocalDate.now());
+        User currentUser = getCurrentAuthenticatedUser();
+        List<Task> overdueTasks = taskRepository.findOverdueTasksByUserAccess(currentUser.getId(), LocalDate.now());
         return overdueTasks.stream()
                 .map(taskMapper::toResponse)
                 .toList();

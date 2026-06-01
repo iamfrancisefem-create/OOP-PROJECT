@@ -21,6 +21,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: Hides HTTP security filter chain configuration behind a single configuration class
+// OOP — COMPOSITION: composed of JwtFilter, CustomUserDetailsService, PasswordEncoder
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;

@@ -15,6 +15,8 @@ import org.springframework.stereotype.Repository;
  * Repository for {@link Message} entities (direct messaging / chat).
  */
 @Repository
+// OOP — INHERITANCE: extends JpaRepository
+// OOP — ABSTRACTION: abstracts direct messaging / chat queries
 public interface MessageRepository extends JpaRepository<Message, Long> {
 
     /**

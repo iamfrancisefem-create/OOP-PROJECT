@@ -30,6 +30,7 @@
               <i class="fa-solid fa-search"></i>
               <input type="text" id="userSearch" placeholder="Search users...">
             </div>
+            <button class="btn btn-primary btn-sm" id="createUserBtn"><i class="fa-solid fa-plus"></i> Create User</button>
           </div>
         </div>
         <div class="glass-card">
@@ -56,9 +57,53 @@
     </div>
   </div>
   <div id="modalContainer"></div>
+
+  <!-- Create User Modal -->
+  <div class="modal-overlay" id="createUserModal" style="display:none">
+    <div class="modal-content glass-card" style="max-width:480px;width:100%">
+      <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px 0">
+        <h3 style="margin:0;font-size:18px"><i class="fa-solid fa-user-plus" style="margin-right:8px"></i>Create User</h3>
+        <button class="modal-close" id="closeCreateUserModal" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted)">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:20px 24px">
+        <form id="createUserForm">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-control" id="cuFullName" required placeholder="e.g. Jane Smith">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" id="cuEmail" required placeholder="e.g. jane@example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-control" id="cuPassword" required placeholder="Create a password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone (optional)</label>
+            <input type="text" class="form-control" id="cuPhone" placeholder="e.g. +1234567890">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <select class="form-select" id="cuRole">
+              <option value="PROJECT_MANAGER">Project Manager</option>
+              <option value="TEAM_LEADER">Team Leader</option>
+              <option value="PRODUCT_OWNER">Product Owner</option>
+              <option value="TEAM_MEMBER" selected>Team Member</option>
+            </select>
+          </div>
+          <div class="flex gap-3" style="justify-content:flex-end;margin-top:20px">
+            <button type="button" class="btn btn-outline" id="cancelCreateUser">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="submitCreateUser"><i class="fa-solid fa-user-plus"></i> Create Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { UserAPI } from '../assets/js/api.js';
-    import { Theme, Session, authGuard, initSidebar, toast, confirmDialog, renderPagination, ROLES } from '../assets/js/utils.js';
+    import { Theme, Session, authGuard, initSidebar, toast, confirmDialog, renderPagination, ROLES, DateHelper } from '../assets/js/utils.js';
 
     if (!authGuard()) throw new Error('Not authenticated');
     Theme.init();
@@ -72,6 +117,45 @@
         if (cb) cb();
       } catch (e) {
         console.error('Failed to load component:', url, e);
+      }
+    }
+
+    // ─── Create User Modal ─────────────────────────────────
+    function openCreateUserModal() {
+      document.getElementById('createUserModal').style.display = 'flex';
+    }
+    function closeCreateUserModal() {
+      document.getElementById('createUserModal').style.display = 'none';
+      document.getElementById('createUserForm').reset();
+    }
+
+    async function handleCreateUser(e) {
+      e.preventDefault();
+      const fullName = document.getElementById('cuFullName').value.trim();
+      const email = document.getElementById('cuEmail').value.trim();
+      const password = document.getElementById('cuPassword').value;
+      const phone = document.getElementById('cuPhone').value.trim();
+      const role = document.getElementById('cuRole').value;
+
+      if (!fullName || !email || !password) {
+        toast('Full Name, Email, and Password are required.', 'warning');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitCreateUser');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
+
+      try {
+        await UserAPI.create({ fullName, email, password, phone, role });
+        toast('User created successfully', 'success');
+        closeCreateUserModal();
+        loadUsers(currentPage);
+      } catch (e) {
+        toast(e.response?.data?.message || 'Failed to create user', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Create Account';
       }
     }
 
@@ -208,6 +292,13 @@
       } catch (e) {
         console.error('Init error:', e);
       }
+      document.getElementById('createUserBtn').addEventListener('click', openCreateUserModal);
+      document.getElementById('closeCreateUserModal').addEventListener('click', closeCreateUserModal);
+      document.getElementById('cancelCreateUser').addEventListener('click', closeCreateUserModal);
+      document.getElementById('createUserForm').addEventListener('submit', handleCreateUser);
+      document.getElementById('createUserModal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeCreateUserModal();
+      });
       document.getElementById('userSearch').addEventListener('input', e => {
         const q = e.target.value.toLowerCase();
         document.querySelectorAll('#userTableBody tr').forEach(row => {

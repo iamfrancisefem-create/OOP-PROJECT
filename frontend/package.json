@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "npx http-server -p 5500 -c-1 --cors"
+    "start": "npx http-server -p 5501 -c-1 --cors"
   },
   "dependencies": {
     "@capacitor/android": "^7.6.5",

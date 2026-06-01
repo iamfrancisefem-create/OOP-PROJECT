@@ -1,6 +1,7 @@
 package com.pms.controller;
 
 import com.pms.dto.request.ChangePasswordRequest;
+import com.pms.dto.request.RegisterRequest;
 import com.pms.dto.request.UpdateRoleRequest;
 import com.pms.dto.request.UpdateUserRequest;
 import com.pms.dto.response.ApiResponse;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides user management REST endpoints
+// OOP — COMPOSITION: composed of UserService
 public class UserController {
 
     private final UserService userService;
@@ -28,7 +31,23 @@ public class UserController {
 
 
 
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(
+            @Valid @RequestBody RegisterRequest request
+    ) {
+        UserResponse user = userService.createUser(
+                request.getFullName(),
+                request.getEmail(),
+                request.getPassword(),
+                request.getPhone(),
+                request.getRole()
+        );
+        return ResponseEntity.ok(ApiResponse.success("User created successfully.", user));
+    }
+
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PagedResponse<UserResponse>>> getAllUsers(
             @PageableDefault(size = 10) Pageable pageable
     ) {

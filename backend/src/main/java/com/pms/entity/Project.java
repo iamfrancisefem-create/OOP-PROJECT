@@ -24,6 +24,8 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity (inherits common primary key and audit timestamps)
+// OOP — ASSOCIATION: @ManyToOne with User (createdBy), Team; @OneToMany with Task, Milestone, FileUpload
 public class Project extends BaseEntity {
 
     @Column(nullable = false, length = 255)
@@ -57,6 +59,7 @@ public class Project extends BaseEntity {
     // Relationships                                                      //
     // ------------------------------------------------------------------ //
 
+    // OOP — COMPOSITION: A Project is composed of Tasks, Milestones, and FileUploads (cascade = ALL means child entities live/die with parent)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;

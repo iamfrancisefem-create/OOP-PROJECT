@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+// OOP — INHERITANCE: implements UserDetailsService
+// OOP — POLYMORPHISM: provides a concrete implementation of loadUserByUsername() that Spring Security calls polymorphically
+// OOP — ENCAPSULATION: hides user lookup details from the security framework
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;

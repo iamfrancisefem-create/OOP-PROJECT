@@ -17,6 +17,9 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
+// OOP — INHERITANCE: extends OncePerRequestFilter (inherits doFilterInternal contract, guarantees single execution per request)
+// OOP — ENCAPSULATION: hides token extraction, validation, and SecurityContext population logic
+// OOP — COMPOSITION: composed of JwtService and CustomUserDetailsService
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;

@@ -26,6 +26,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+// OOP — INHERITANCE: implements FileService interface
+// OOP — ENCAPSULATION: hides file upload, versioning, and storage logic
+// OOP — COMPOSITION: composed of FileUploadRepository, ProjectRepository, UserRepository, FileStorageService, FileUtil, FileMapper, TeamMemberRepository
 public class FileServiceImpl implements FileService {
 
     private final FileUploadRepository fileUploadRepository;

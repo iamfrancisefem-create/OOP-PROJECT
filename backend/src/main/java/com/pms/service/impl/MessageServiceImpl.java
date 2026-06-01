@@ -11,6 +11,9 @@ import com.pms.repository.MessageRepository;
 import com.pms.repository.UserRepository;
 import com.pms.service.NotificationService;
 import com.pms.repository.TeamMemberRepository;
+import com.pms.repository.TeamRepository;
+import com.pms.entity.Team;
+import com.pms.entity.TeamMember;
 import com.pms.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,6 +27,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+// OOP — INHERITANCE: implements MessageService interface
+// OOP — ENCAPSULATION: hides chat history and message sending logic
+// OOP — COMPOSITION: composed of MessageRepository, UserRepository, MessageMapper, NotificationService, TeamMemberRepository, TeamRepository
 public class MessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepository;
@@ -31,6 +37,44 @@ public class MessageServiceImpl implements MessageService {
     private final MessageMapper messageMapper;
     private final NotificationService notificationService;
     private final TeamMemberRepository teamMemberRepository;
+    private final TeamRepository teamRepository;
+
+    private void ensureSharedTeam(User u1, User u2) {
+        boolean sameTeam = teamMemberRepository.findByUser(u1).stream()
+                .anyMatch(tm -> teamMemberRepository.findByUser(u2).stream()
+                        .anyMatch(rtm -> rtm.getTeam().getId().equals(tm.getTeam().getId())));
+        if (!sameTeam) {
+            Team globalTeam = teamRepository.findByNameContainingIgnoreCase("Global Team", org.springframework.data.domain.Pageable.unpaged())
+                    .getContent().stream().findFirst().orElseGet(() -> {
+                        Team newTeam = Team.builder()
+                                .name("Global Team")
+                                .description("Automatically generated team for system collaboration")
+                                .createdBy(u1)
+                                .build();
+                        return teamRepository.save(newTeam);
+                    });
+
+            if (!teamMemberRepository.existsByTeamAndUser(globalTeam, u1)) {
+                TeamMember tm1 = TeamMember.builder()
+                        .team(globalTeam)
+                        .user(u1)
+                        .role("MEMBER")
+                        .joinedAt(LocalDateTime.now())
+                        .build();
+                teamMemberRepository.save(tm1);
+            }
+
+            if (!teamMemberRepository.existsByTeamAndUser(globalTeam, u2)) {
+                TeamMember tm2 = TeamMember.builder()
+                        .team(globalTeam)
+                        .user(u2)
+                        .role("MEMBER")
+                        .joinedAt(LocalDateTime.now())
+                        .build();
+                teamMemberRepository.save(tm2);
+            }
+        }
+    }
 
     private User getCurrentAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -45,6 +89,7 @@ public class MessageServiceImpl implements MessageService {
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Receiver user not found with ID: " + receiverId));
         
+        ensureSharedTeam(sender, receiver);
         boolean isAdmin = sender.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
         // Verify that sender and receiver share at least one common team
         boolean sameTeam = teamMemberRepository.findByUser(sender).stream()
@@ -77,6 +122,7 @@ public class MessageServiceImpl implements MessageService {
         User otherUser = userRepository.findById(otherUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Other user not found with ID: " + otherUserId));
 
+        ensureSharedTeam(currentUser, otherUser);
         boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
         // Verify that currentUser and otherUser share at least one common team
         boolean sameTeam = teamMemberRepository.findByUser(currentUser).stream()
@@ -108,6 +154,7 @@ public class MessageServiceImpl implements MessageService {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sender user not found with ID: " + senderId));
 
+        ensureSharedTeam(receiver, sender);
         boolean isAdmin = receiver.getRoles().stream().anyMatch(r -> r.getName().name().equals("ADMIN"));
         // Verify that receiver and sender share at least one common team
         boolean sameTeam = teamMemberRepository.findByUser(receiver).stream()

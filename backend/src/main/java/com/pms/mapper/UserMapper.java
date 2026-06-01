@@ -10,6 +10,8 @@ import org.mapstruct.Mapping;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+// OOP — ABSTRACTION: MapStruct generates implementation automatically — defines User ↔ DTO conversion contract
+// OOP — POLYMORPHISM: mapper method names are polymorphic entry points for different conversion scenarios
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 

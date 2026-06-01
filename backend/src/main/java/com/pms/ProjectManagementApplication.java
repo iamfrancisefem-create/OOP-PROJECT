@@ -9,6 +9,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
 @EnableJpaAuditing
 @EnableScheduling
+// OOP — ENCAPSULATION: hides Spring Boot bootstrap configuration behind annotations and main() method
+// OOP — COMPOSITION: composed of @EnableJpaAuditing and @EnableScheduling as meta-configurations
 public class ProjectManagementApplication {
 
     public static void main(String[] args) {

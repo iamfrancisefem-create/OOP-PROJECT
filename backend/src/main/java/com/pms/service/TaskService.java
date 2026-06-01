@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
+// OOP — ABSTRACTION: Contract for task CRUD, status transitions, and assignments
 public interface TaskService {
     TaskResponse createTask(TaskRequest request);
     PagedResponse<TaskResponse> getAllTasks(Pageable pageable);

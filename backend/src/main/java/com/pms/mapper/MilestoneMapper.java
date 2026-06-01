@@ -6,6 +6,7 @@ import com.pms.entity.Milestone;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+// OOP — ABSTRACTION: MapStruct generates Milestone ↔ MilestoneResponse converter
 @Mapper(componentModel = "spring")
 public interface MilestoneMapper {
 

@@ -25,6 +25,8 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity (inherits id, createdAt, updatedAt)
+// OOP — COMPOSITION: contains List of Comment objects
 public class Task extends BaseEntity {
 
     @Column(nullable = false, length = 255)
@@ -49,6 +51,8 @@ public class Task extends BaseEntity {
     // Relationships                                                      //
     // ------------------------------------------------------------------ //
 
+    // OOP — ASSOCIATION: @ManyToOne relationships with Project, User (assignedTo, createdBy)
+    // OOP — COMPOSITION: @OneToMany cascade ALL — Comments are part of a Task lifecycle
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;

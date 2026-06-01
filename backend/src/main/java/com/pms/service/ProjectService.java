@@ -6,6 +6,7 @@ import com.pms.dto.response.ProjectResponse;
 import com.pms.entity.enums.ProjectStatus;
 import org.springframework.data.domain.Pageable;
 
+// OOP — ABSTRACTION: Contract for project lifecycle management
 public interface ProjectService {
     ProjectResponse createProject(ProjectRequest request);
     PagedResponse<ProjectResponse> getAllProjects(Pageable pageable);

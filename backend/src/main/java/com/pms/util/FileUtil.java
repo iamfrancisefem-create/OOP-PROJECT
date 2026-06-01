@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Component
+// OOP — ENCAPSULATION: hides file validation logic (extension whitelist, path traversal check)
 public class FileUtil {
 
     @Value("${file.allowed-types}")

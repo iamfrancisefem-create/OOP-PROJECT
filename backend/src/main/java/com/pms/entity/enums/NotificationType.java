@@ -6,6 +6,7 @@ package com.pms.entity.enums;
  * <p>Used to determine display formatting on the frontend
  * and to filter notification preferences.</p>
  */
+// OOP — ENCAPSULATION: defines fixed set of constants for NotificationType: notification categories
 public enum NotificationType {
 
     TASK_ASSIGNED,

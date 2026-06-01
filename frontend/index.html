@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Project Management System</title>
+  <title>Welcome — ProjectFlow</title>
   <meta name="description" content="A premium project management SaaS built with a sleek UI and real‑time collaboration." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -18,42 +19,56 @@
   <script type="module" src="assets/js/auth.js"></script>
 </head>
 <body>
-  <div class="app-shell">
-    <!-- Sidebar (hidden on landing) -->
-    <aside class="sidebar" id="sidebar"></aside>
-    <main class="main-content">
-      <nav class="navbar">
-        <div class="navbar-left">
-          <button class="btn-menu-toggle"><i class="fa-solid fa-bars"></i></button>
-          <div class="page-title">Welcome</div>
+  <div class="auth-page">
+    <!-- Left Side: Brand Panel -->
+    <div class="auth-brand">
+      <div class="auth-brand-logo">
+        <div class="logo-box">P</div>
+        <div class="brand-name">Project<span>Flow</span></div>
+      </div>
+      <div class="auth-brand-content">
+        <h1>Manage Projects<br>with Confidence</h1>
+        <p>Track tasks, collaborate with teams, and deliver on time — all in one place.</p>
+      </div>
+      <div class="auth-brand-features">
+        <div class="auth-feature-item">
+          <div class="auth-feature-icon"><i class="fa-solid fa-layer-group"></i></div>
+          <span>Kanban boards & task tracking</span>
         </div>
-        <div class="navbar-right">
-          <button class="btn-icon theme-toggle" title="Toggle theme"><i class="fa-solid fa-moon"></i></button>
+        <div class="auth-feature-item">
+          <div class="auth-feature-icon"><i class="fa-solid fa-users"></i></div>
+          <span>Team collaboration & messaging</span>
         </div>
-      </nav>
-      <section class="page-body">
-        <div class="auth-page">
-          <div class="auth-card">
-            <div class="auth-card-header">
-              <h2>Project Management System</h2>
-              <p>Organize, collaborate, and deliver with confidence.</p>
-            </div>
-            <div class="auth-card-body">
-              <button class="btn btn-primary btn-full" id="btnLogin">
-                <i class="fa-solid fa-right-to-bracket"></i> Log In
-              </button>
-              <button class="btn btn-outline btn-full" id="btnRegister">
-                <i class="fa-solid fa-user-plus"></i> Register
-              </button>
-            </div>
-            <div class="auth-footer">
-              <a href="#" id="btnDemo">Try demo account</a>
-            </div>
-          </div>
+        <div class="auth-feature-item">
+          <div class="auth-feature-icon"><i class="fa-solid fa-chart-line"></i></div>
+          <span>Analytics & performance reports</span>
         </div>
-      </section>
-    </main>
+      </div>
+      <div class="auth-brand-bottom">&copy; 2026 ProjectFlow. All rights reserved.</div>
+    </div>
+
+    <!-- Right Side: Navigation Panel -->
+    <div class="auth-form-panel">
+      <div class="auth-form-card">
+        <div class="auth-form-header">
+          <h2>ProjectFlow</h2>
+          <p>Organize, collaborate, and deliver with confidence.</p>
+        </div>
+        <div class="auth-card-body" style="display: flex; flex-direction: column; gap: 16px;">
+          <button class="btn btn-primary btn-full btn-lg" id="btnLogin">
+            <i class="fa-solid fa-right-to-bracket"></i> Log In
+          </button>
+          <button class="btn btn-outline btn-full btn-lg" id="btnRegister">
+            <i class="fa-solid fa-user-plus"></i> Register
+          </button>
+        </div>
+        <div class="auth-footer" style="margin-top: 32px;">
+          <a href="#" id="btnDemo" class="forgot-link">Try demo account</a>
+        </div>
+      </div>
+    </div>
   </div>
+
   <script>
     // Quick navigation from landing
     document.getElementById('btnLogin').addEventListener('click', () => location.href = 'pages/login.html');
@@ -62,7 +77,7 @@
     document.getElementById('btnDemo').addEventListener('click', e => {
       e.preventDefault();
       // Store demo credentials in session and redirect to dashboard
-      import('./js/auth.js').then(({ loginDemo }) => loginDemo());
+      import('./assets/js/auth.js').then(({ loginDemo }) => loginDemo());
     });
   </script>
 </body>

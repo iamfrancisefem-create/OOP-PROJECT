@@ -42,6 +42,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+// OOP — INHERITANCE: implements ReportService interface
+// OOP — ENCAPSULATION: hides PDF/Excel generation and file storage logic
+// OOP — COMPOSITION: composed of ProjectRepository, ReportRepository, TaskRepository, UserRepository, ReportMapper, FileStorageService
 public class ReportServiceImpl implements ReportService {
 
     private final ReportRepository reportRepository;
@@ -195,6 +198,25 @@ public class ReportServiceImpl implements ReportService {
         validateProjectAccess(project);
 
         Page<Report> page = reportRepository.findByProject(project, pageable);
+        List<ReportResponse> content = page.getContent().stream()
+                .map(reportMapper::toResponse)
+                .toList();
+
+        return PagedResponse.<ReportResponse>builder()
+                .content(content)
+                .page(page.getNumber())
+                .size(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResponse<ReportResponse> getAllReports(Pageable pageable) {
+        User currentUser = getCurrentAuthenticatedUser();
+        Page<Report> page = reportRepository.findByUserAccess(currentUser.getId(), pageable);
         List<ReportResponse> content = page.getContent().stream()
                 .map(reportMapper::toResponse)
                 .toList();

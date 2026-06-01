@@ -17,6 +17,8 @@ import org.springframework.stereotype.Repository;
  * Repository for {@link Project} entities.
  */
 @Repository
+// OOP — INHERITANCE: extends JpaRepository
+// OOP — ABSTRACTION: abstracts project DB queries behind derived method names and @Query annotations
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     @Query("SELECT p FROM Project p WHERE p.createdBy.id = :userId OR (p.team IS NOT NULL AND EXISTS (SELECT tm FROM TeamMember tm WHERE tm.team = p.team AND tm.user.id = :userId))")
@@ -39,4 +41,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     @Query("SELECT COUNT(p) FROM Project p WHERE p.team = :team")
     long countByTeam(@Param("team") Team team);
+
+    @Query("SELECT COUNT(p) FROM Project p WHERE p.createdBy.id = :userId OR (p.team IS NOT NULL AND EXISTS (SELECT tm FROM TeamMember tm WHERE tm.team = p.team AND tm.user.id = :userId))")
+    long countByUserAccess(@Param("userId") Long userId);
 }

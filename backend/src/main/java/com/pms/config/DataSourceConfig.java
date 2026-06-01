@@ -5,16 +5,33 @@ import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 
 import javax.sql.DataSource;
 import java.net.URI;
 import java.net.URISyntaxException;
 
 @Configuration
+// OOP — ENCAPSULATION: hides data source creation logic (dev vs prod profiles) behind @Bean methods
+// OOP — POLYMORPHISM: returns DataSource interface — different profiles produce different DataSource implementations
 public class DataSourceConfig {
 
     @Bean
     @Primary
+    @Profile("dev")
+    public DataSource devDataSource() {
+        return DataSourceBuilder.create()
+                .type(HikariDataSource.class)
+                .url("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1")
+                .username("sa")
+                .password("")
+                .driverClassName("org.h2.Driver")
+                .build();
+    }
+
+    @Bean
+    @Primary
+    @Profile("!dev")
     public DataSource dataSource() throws URISyntaxException {
         String databaseUrl = System.getenv("DATABASE_URL");
 

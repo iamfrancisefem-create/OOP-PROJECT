@@ -11,6 +11,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — ENCAPSULATION: generic paged response wrapper — hides pagination metadata
 public class PagedResponse<T> {
     private List<T> content;
     private int page;

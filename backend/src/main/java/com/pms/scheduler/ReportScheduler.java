@@ -15,6 +15,8 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+// OOP — ENCAPSULATION: hides automated report generation logic behind @Scheduled methods
+// OOP — COMPOSITION: composed of ProjectRepository and ReportService
 public class ReportScheduler {
 
     private final ProjectRepository projectRepository;

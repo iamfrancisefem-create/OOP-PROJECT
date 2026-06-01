@@ -12,6 +12,8 @@ import java.util.Optional;
  * Repository for {@link User} entities.
  */
 @Repository
+// OOP — INHERITANCE: extends JpaRepository (inherits CRUD, pagination, sorting)
+// OOP — ABSTRACTION: abstracts away DB access behind method names and query derivation
 public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);

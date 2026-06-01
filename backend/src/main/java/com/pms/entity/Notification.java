@@ -19,6 +19,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity
+// OOP — ASSOCIATION: @ManyToOne with User
 public class Notification extends BaseEntity {
 
     @Column(nullable = false, length = 255)

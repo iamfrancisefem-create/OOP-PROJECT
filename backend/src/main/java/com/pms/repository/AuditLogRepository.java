@@ -13,6 +13,8 @@ import org.springframework.stereotype.Repository;
  * expose update or delete operations on this repository.</p>
  */
 @Repository
+// OOP — INHERITANCE: extends JpaRepository
+// OOP — ABSTRACTION: abstracts append-only audit log queries
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
     Page<AuditLog> findByEntityTypeAndEntityId(String entityType, Long entityId, Pageable pageable);

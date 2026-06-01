@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/reports")
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides report generation and download REST endpoints
+// OOP — COMPOSITION: composed of ReportService, ReportRepository
 public class ReportController {
 
     private final ReportService reportService;
@@ -37,6 +39,7 @@ public class ReportController {
     }
 
     @GetMapping("/download/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER', 'TEAM_LEADER', 'TEAM_MEMBER')")
     public ResponseEntity<Resource> downloadReport(@PathVariable Long id) {
         Resource resource = reportService.downloadReport(id);
 
@@ -60,11 +63,21 @@ public class ReportController {
     }
 
     @GetMapping("/project/{projectId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER', 'TEAM_LEADER', 'TEAM_MEMBER')")
     public ResponseEntity<ApiResponse<PagedResponse<ReportResponse>>> getReportsByProject(
             @PathVariable Long projectId,
             @PageableDefault(size = 10) Pageable pageable
     ) {
         PagedResponse<ReportResponse> response = reportService.getReportsByProject(projectId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Project reports history retrieved successfully.", response));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
+    public ResponseEntity<ApiResponse<PagedResponse<ReportResponse>>> getAllReports(
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        PagedResponse<ReportResponse> response = reportService.getAllReports(pageable);
+        return ResponseEntity.ok(ApiResponse.success("All reports retrieved successfully.", response));
     }
 }

@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — ENCAPSULATION: private fields with Lombok @Data — data carrier for API layer
 public class TaskAssignRequest {
 
     @NotNull(message = "Assigned user ID is required")

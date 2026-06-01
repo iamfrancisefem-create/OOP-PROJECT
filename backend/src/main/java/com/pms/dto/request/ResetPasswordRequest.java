@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — ENCAPSULATION: private fields with Lombok @Data — data carrier for API layer
 public class ResetPasswordRequest {
 
     @NotBlank(message = "Token is required")

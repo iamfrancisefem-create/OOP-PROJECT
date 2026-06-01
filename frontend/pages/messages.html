@@ -194,6 +194,7 @@
       const content = input.value.trim();
       if (!content || !currentChatUserId) return;
       input.value = '';
+      input.style.height = 'auto'; // Reset height
       try {
         await MessageAPI.send(currentChatUserId, content);
         const container = document.getElementById('chatMessages');
@@ -218,8 +219,14 @@
     }
 
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
-    document.getElementById('chatInput').addEventListener('keydown', e => {
+    
+    const chatInput = document.getElementById('chatInput');
+    chatInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    chatInput.addEventListener('input', () => {
+      chatInput.style.height = 'auto';
+      chatInput.style.height = (chatInput.scrollHeight) + 'px';
     });
     document.getElementById('chatBackBtn').addEventListener('click', () => {
       document.getElementById('chatSidebar').classList.toggle('open');

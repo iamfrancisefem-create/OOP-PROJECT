@@ -5,6 +5,7 @@ import com.pms.dto.response.PagedResponse;
 import com.pms.dto.response.TeamResponse;
 import org.springframework.data.domain.Pageable;
 
+// OOP — ABSTRACTION: Contract for team CRUD and member management
 public interface TeamService {
     TeamResponse createTeam(TeamRequest request);
     PagedResponse<TeamResponse> getAllTeams(Pageable pageable);

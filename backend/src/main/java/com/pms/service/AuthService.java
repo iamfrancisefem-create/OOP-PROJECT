@@ -5,6 +5,8 @@ import com.pms.dto.request.RegisterRequest;
 import com.pms.dto.request.ResetPasswordRequest;
 import com.pms.dto.response.AuthResponse;
 
+// OOP — ABSTRACTION: Defines a contract for authentication operations without exposing implementation details
+// OOP — POLYMORPHISM: Multiple implementations can satisfy this interface (e.g. mock for tests)
 public interface AuthService {
     AuthResponse register(RegisterRequest request);
     AuthResponse login(LoginRequest request);

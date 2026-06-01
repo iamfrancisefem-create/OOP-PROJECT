@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/milestones")
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides milestone CRUD REST endpoints
+// OOP — COMPOSITION: composed of MilestoneService
 public class MilestoneController {
 
     private final MilestoneService milestoneService;

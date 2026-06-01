@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Configuration
+// OOP — ENCAPSULATION: hides CORS policy configuration behind a single @Configuration class
 public class CorsConfig {
 
     @Value("${app.cors.allowed-origins}")

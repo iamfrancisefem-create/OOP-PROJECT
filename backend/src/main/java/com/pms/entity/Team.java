@@ -21,6 +21,8 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity (inherits common ID and audit fields)
+// OOP — COMPOSITION: Team contains members (List<TeamMember>) and projects (List<Project>)
 public class Team extends BaseEntity {
 
     @Column(nullable = false, length = 100)

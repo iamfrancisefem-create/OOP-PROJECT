@@ -17,6 +17,8 @@ import java.security.Principal;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
+// OOP — ENCAPSULATION: hides WebSocket message routing and persistence logic
+// OOP — COMPOSITION: composed of MessageService, UserRepository, SimpMessagingTemplate
 public class ChatController {
 
     private final MessageService messageService;

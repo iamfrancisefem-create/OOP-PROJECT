@@ -6,6 +6,7 @@ package com.pms.entity.enums;
  * <p>Tasks progress through these states linearly:
  * {@code TODO → IN_PROGRESS → TESTING → DONE}.</p>
  */
+// OOP — ENCAPSULATION: defines fixed set of constants for TaskStatus: task workflow states
 public enum TaskStatus {
 
     TODO,

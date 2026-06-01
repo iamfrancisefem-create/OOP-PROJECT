@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/projects")
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides project CRUD REST endpoints
+// OOP — COMPOSITION: composed of ProjectService
 public class ProjectController {
 
     private final ProjectService projectService;

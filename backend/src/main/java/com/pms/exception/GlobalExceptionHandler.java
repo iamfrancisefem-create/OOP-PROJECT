@@ -18,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
 @Slf4j
+// OOP — POLYMORPHISM: Overloaded @ExceptionHandler methods — same handle*() pattern, different exception types
+// OOP — ENCAPSULATION: hides HTTP response construction behind domain-specific handler methods
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)

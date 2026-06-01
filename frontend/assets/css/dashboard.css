@@ -196,6 +196,27 @@
 }
 .project-card:hover .project-actions { opacity: 1; }
 
+/* Progress Bar (Project Cards) */
+.progress {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.progress-bar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+.progress-bar.gradient {
+  background: linear-gradient(90deg, var(--primary), var(--primary-hover));
+}
+.progress-bar.success {
+  background: linear-gradient(90deg, var(--success), #047857);
+}
+
 /* ─── Kanban Board ──────────────────────────────────────── */
 .kanban-board {
   display: grid;
@@ -394,8 +415,10 @@
 .chat-layout {
   display: grid;
   grid-template-columns: 300px 1fr;
+  grid-template-rows: 1fr;
   flex: 1;
   min-height: 0;
+  height: calc(100vh - 230px);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -407,6 +430,8 @@
   display: flex;
   flex-direction: column;
   background: var(--surface);
+  min-height: 0;
+  overflow: hidden;
 }
 .chat-sidebar-header {
   padding: var(--space-4) var(--space-4);
@@ -481,6 +506,9 @@
   display: flex;
   flex-direction: column;
   background: var(--bg);
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
 }
 .chat-main-header {
   display: flex;
@@ -489,15 +517,19 @@
   padding: var(--space-4) var(--space-5);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 2;
 }
 .chat-main-actions { margin-left: auto; display: flex; gap: var(--space-2); }
 .chat-messages {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-5);
+  padding-bottom: 80px;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  min-height: 0;
 }
 
 /* Message Bubbles */
@@ -577,9 +609,15 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-5);
   background: var(--surface);
   border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
 }
 .chat-input-wrap {
   flex: 1;
@@ -677,6 +715,16 @@
   font-weight: 700; position: relative;
 }
 .generate-card .btn-white:hover { background: #F1F5F9; }
+.generate-card .form-select {
+  background: rgba(255,255,255,0.9);
+  border-color: rgba(255,255,255,0.5);
+  color: var(--text-primary);
+}
+.generate-card .form-select:focus {
+  background: #fff;
+  border-color: #fff;
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.2);
+}
 
 /* ─── File Manager ──────────────────────────────────────── */
 .file-card {

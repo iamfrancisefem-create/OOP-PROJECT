@@ -16,6 +16,7 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — ENCAPSULATION: private fields with Lombok @Data — data carrier for API layer
 public class ProjectRequest {
 
     @NotBlank(message = "Project title is required")

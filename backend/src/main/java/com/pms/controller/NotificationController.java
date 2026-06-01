@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides notification CRUD REST endpoints
+// OOP — COMPOSITION: composed of NotificationService
 public class NotificationController {
 
     private final NotificationService notificationService;

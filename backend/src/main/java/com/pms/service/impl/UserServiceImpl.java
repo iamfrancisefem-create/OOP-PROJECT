@@ -6,6 +6,7 @@ import com.pms.entity.Role;
 import com.pms.entity.User;
 import com.pms.entity.enums.RoleName;
 import com.pms.exception.BadRequestException;
+import com.pms.exception.DuplicateResourceException;
 import com.pms.exception.ResourceNotFoundException;
 import com.pms.mapper.UserMapper;
 import com.pms.repository.RoleRepository;
@@ -18,10 +19,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+// OOP — INHERITANCE: implements UserService interface
+// OOP — ENCAPSULATION: hides user CRUD, role assignment, and password-change logic
+// OOP — COMPOSITION: composed of UserRepository, RoleRepository, UserMapper, PasswordEncoder
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
@@ -51,6 +57,41 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
         return userMapper.toResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse createUser(String fullName, String email, String password, String phone, String role) {
+        if (userRepository.existsByEmail(email)) {
+            throw new DuplicateResourceException("Email address already registered: " + email);
+        }
+
+        User user = User.builder()
+                .fullName(fullName)
+                .email(email)
+                .password(passwordEncoder.encode(password))
+                .phone(phone)
+                .enabled(true)
+                .emailVerified(true)
+                .build();
+
+        RoleName roleName = RoleName.TEAM_MEMBER;
+        if (role != null && !role.isBlank()) {
+            try {
+                roleName = RoleName.valueOf(role.toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        final RoleName finalRole = roleName;
+        Role userRole = roleRepository.findByName(finalRole)
+                .orElseGet(() -> {
+                    Role newRole = Role.builder().name(finalRole).build();
+                    return roleRepository.save(newRole);
+                });
+
+        user.setRoles(new HashSet<>(Collections.singletonList(userRole)));
+        User savedUser = userRepository.save(user);
+        return userMapper.toResponse(savedUser);
     }
 
     @Override

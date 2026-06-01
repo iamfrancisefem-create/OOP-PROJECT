@@ -26,6 +26,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+// OOP — INHERITANCE: implements NotificationService interface
+// OOP — ENCAPSULATION: hides notification creation and email delivery logic
+// OOP — COMPOSITION: composed of NotificationRepository, UserRepository, NotificationMapper, JavaMailSender
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;

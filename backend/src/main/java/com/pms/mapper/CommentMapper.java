@@ -6,6 +6,7 @@ import com.pms.entity.Comment;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+// OOP — ABSTRACTION: MapStruct generates Comment ↔ CommentResponse converter
 @Mapper(componentModel = "spring", uses = {UserMapper.class})
 public interface CommentMapper {
 

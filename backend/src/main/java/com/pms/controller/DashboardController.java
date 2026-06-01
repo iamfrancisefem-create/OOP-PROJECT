@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/dashboard")
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides dashboard stats and analytics REST endpoints
+// OOP — COMPOSITION: composed of DashboardService
 public class DashboardController {
 
     private final DashboardService dashboardService;

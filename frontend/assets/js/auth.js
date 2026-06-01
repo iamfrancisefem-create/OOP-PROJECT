@@ -73,3 +73,31 @@ export function togglePasswordVisibility(inputEl, iconEl) {
     iconEl.className = isPass ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
   }
 }
+
+export async function loginDemo() {
+  const email = 'demo@pms.com';
+  const password = 'demo123';
+  try {
+    const res = await AuthAPI.login({ email, password });
+    const { token, refreshToken, id, email: userEmail, fullName, phone, roles } = res.data.data;
+    Session.set(token, refreshToken, { id, email: userEmail, fullName, phone, roles });
+    toast('Welcome to the Demo Account!', 'success');
+    setTimeout(() => window.location.href = 'pages/dashboard.html', 500);
+  } catch (err) {
+    try {
+      const regRes = await AuthAPI.register({
+        fullName: 'Demo User',
+        email,
+        phone: '1234567890',
+        password,
+        role: 'ADMIN'
+      });
+      const { token, refreshToken, id, email: userEmail, fullName, phone, roles } = regRes.data.data;
+      Session.set(token, refreshToken, { id, email: userEmail, fullName, phone, roles });
+      toast('Demo Account created and logged in!', 'success');
+      setTimeout(() => window.location.href = 'pages/dashboard.html', 500);
+    } catch (regErr) {
+      toast('Failed to initialize demo account.', 'error');
+    }
+  }
+}

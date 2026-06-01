@@ -28,6 +28,9 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+// OOP — INHERITANCE: implements TeamService interface
+// OOP — ENCAPSULATION: hides team CRUD and member management logic
+// OOP — COMPOSITION: composed of TeamRepository, TeamMemberRepository, UserRepository, TeamMapper
 public class TeamServiceImpl implements TeamService {
 
     private final TeamRepository teamRepository;
@@ -66,7 +69,8 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public PagedResponse<TeamResponse> getAllTeams(Pageable pageable) {
-        Page<Team> teamsPage = teamRepository.findAll(pageable);
+        User currentUser = getCurrentAuthenticatedUser();
+        Page<Team> teamsPage = teamRepository.findByUserAccess(currentUser.getId(), pageable);
         List<TeamResponse> content = teamsPage.getContent().stream()
                 .map(team -> {
                     TeamResponse resp = teamMapper.toResponse(team);

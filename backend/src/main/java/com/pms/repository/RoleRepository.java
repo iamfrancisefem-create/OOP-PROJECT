@@ -11,6 +11,8 @@ import java.util.Optional;
  * Repository for {@link Role} entities.
  */
 @Repository
+// OOP — INHERITANCE: extends JpaRepository
+// OOP — ABSTRACTION: abstracts role lookup queries
 public interface RoleRepository extends JpaRepository<Role, Long> {
 
     Optional<Role> findByName(RoleName name);

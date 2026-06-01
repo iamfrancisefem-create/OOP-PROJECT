@@ -20,6 +20,8 @@ import java.time.LocalDate;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity
+// OOP — ASSOCIATION: @ManyToOne with Project
 public class Milestone extends BaseEntity {
 
     @Column(nullable = false, length = 255)

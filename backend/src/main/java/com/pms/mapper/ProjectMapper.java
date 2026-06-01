@@ -6,6 +6,7 @@ import com.pms.entity.Project;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+// OOP — ABSTRACTION: MapStruct generates Project ↔ ProjectResponse converter
 @Mapper(componentModel = "spring", uses = {UserMapper.class, TeamMapper.class})
 public interface ProjectMapper {
 

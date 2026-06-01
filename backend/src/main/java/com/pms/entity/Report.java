@@ -20,6 +20,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity
+// OOP — ASSOCIATION: @ManyToOne with Project and User (generatedBy)
 public class Report extends BaseEntity {
 
     @Enumerated(EnumType.STRING)

@@ -7,14 +7,6 @@ spring:
     name: project-management-system
 
   # ---------------------------------------------------------------------------
-  # PostgreSQL Datasource
-  # ---------------------------------------------------------------------------
-  datasource:
-    username: postgres
-    password: "${DB_PASSWORD:testpwd}"
-    driver-class-name: org.postgresql.Driver
-
-  # ---------------------------------------------------------------------------
   # JPA / Hibernate
   # ---------------------------------------------------------------------------
   jpa:
@@ -71,8 +63,8 @@ jwt:
   # Default below is for development only and MUST be changed in production.
   secret: ${JWT_SECRET:ZGV2LW9ubHktam10LXNlY3JldC1kby1ub3QtdXNlLWluLXByb2Q=}
   access-token-expiration: 900000        # 15 minutes in milliseconds
-  refresh-token-expiration: 604800000    # 7 days in milliseconds
-  reset-token-expiration: 1800000       # 30 minutes in milliseconds
+  refresh-token-expiration: 604800000    # 7 days
+  reset-token-expiration: 1800000       # 30 minutes
 
 # =============================================================================
 # File Storage
@@ -86,7 +78,7 @@ file:
 # =============================================================================
 app:
   cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,https://*.vercel.app}
+    allowed-origins: ${CORS_ORIGINS:http://localhost:*,http://127.0.0.1:*,https://*.vercel.app}
 
 # =============================================================================
 # Logging

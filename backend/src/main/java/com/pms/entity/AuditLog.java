@@ -18,6 +18,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity
+// OOP — ASSOCIATION: @ManyToOne with User
 public class AuditLog extends BaseEntity {
 
     /** The action performed (e.g. "CREATE", "UPDATE", "DELETE", "LOGIN"). */

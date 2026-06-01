@@ -7,6 +7,7 @@ import com.pms.dto.response.CommentResponse;
 import com.pms.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/comments")
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides comment CRUD REST endpoints
+// OOP — COMPOSITION: composed of CommentService
 public class CommentController {
 
     private final CommentService commentService;
@@ -37,6 +40,7 @@ public class CommentController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable Long id) {
         commentService.deleteComment(id);
         return ResponseEntity.ok(ApiResponse.success("Comment deleted successfully.", null));

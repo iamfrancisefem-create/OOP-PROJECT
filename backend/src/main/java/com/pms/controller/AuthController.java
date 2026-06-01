@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides authentication endpoints behind @RestController interface
+// OOP — COMPOSITION: composed of AuthService
 public class AuthController {
 
     private final AuthService authService;

@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity
+// OOP — ASSOCIATION: @ManyToOne with Project and User (invitedUser)
 public class ProjectInvitation extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

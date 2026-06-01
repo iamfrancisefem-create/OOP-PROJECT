@@ -12,6 +12,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — ENCAPSULATION: private fields with Lombok @Data — data carrier for API layer
 public class AnalyticsResponse {
     private List<Map<String, Object>> teamPerformance;
     private List<Map<String, Object>> recentActivities;

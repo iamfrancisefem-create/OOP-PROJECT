@@ -11,6 +11,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — ENCAPSULATION: private fields with Lombok @Data — data carrier for API layer
 public class DashboardResponse {
     private Long totalProjects;
     private Long completedTasks;

@@ -28,6 +28,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
+// OOP — ABSTRACTION: Abstract base class that defines a common contract for all entities
+// OOP — ENCAPSULATION: Private fields (id, createdAt, updatedAt) with public getters/setters (Lombok @Getter/@Setter)
 public abstract class BaseEntity {
 
     @Id

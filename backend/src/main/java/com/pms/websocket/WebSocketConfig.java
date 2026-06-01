@@ -9,6 +9,9 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 @Configuration
 @EnableWebSocketMessageBroker
+// OOP — INHERITANCE: implements WebSocketMessageBrokerConfigurer
+// OOP — POLYMORPHISM: overrides configureMessageBroker() and registerStompEndpoints()
+// OOP — ENCAPSULATION: hides STOMP broker configuration details
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500}")

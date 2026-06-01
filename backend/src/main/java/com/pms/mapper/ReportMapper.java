@@ -5,6 +5,7 @@ import com.pms.entity.Report;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+// OOP — ABSTRACTION: MapStruct generates Report ↔ ReportResponse converter
 @Mapper(componentModel = "spring", uses = {UserMapper.class})
 public interface ReportMapper {
 

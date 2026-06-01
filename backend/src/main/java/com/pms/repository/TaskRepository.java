@@ -20,6 +20,8 @@ import java.util.List;
  * because tasks drive dashboards, reports, and notifications.
  */
 @Repository
+// OOP — INHERITANCE: extends JpaRepository
+// OOP — ABSTRACTION: abstracts task queries — the most query-heavy repository in the system
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
     Page<Task> findByProject(Project project, Pageable pageable);
@@ -64,4 +66,30 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     /** Count overdue tasks across the entire system. */
     @Query("SELECT COUNT(t) FROM Task t WHERE t.deadline < :today AND t.status <> 'DONE'")
     long countOverdueTasks(@Param("today") LocalDate today);
+
+    /** Scope tasks to projects the user has access to (creator or team member). */
+    @Query("SELECT t FROM Task t WHERE t.project.id IN (SELECT p.id FROM Project p WHERE p.createdBy.id = :userId OR (p.team IS NOT NULL AND EXISTS (SELECT tm FROM TeamMember tm WHERE tm.team = p.team AND tm.user.id = :userId)))")
+    Page<Task> findByUserAccess(@Param("userId") Long userId, Pageable pageable);
+
+    /** Count overdue tasks scoped to user's accessible projects. */
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.deadline < :today AND t.status <> 'DONE' AND t.project.id IN (SELECT p.id FROM Project p WHERE p.createdBy.id = :userId OR (p.team IS NOT NULL AND EXISTS (SELECT tm FROM TeamMember tm WHERE tm.team = p.team AND tm.user.id = :userId)))")
+    long countOverdueTasksByUserAccess(@Param("userId") Long userId, @Param("today") LocalDate today);
+
+    /** List overdue tasks scoped to user's accessible projects. */
+    @Query("SELECT t FROM Task t WHERE t.deadline < :today AND t.status <> 'DONE' AND t.project.id IN (SELECT p.id FROM Project p WHERE p.createdBy.id = :userId OR (p.team IS NOT NULL AND EXISTS (SELECT tm FROM TeamMember tm WHERE tm.team = p.team AND tm.user.id = :userId)))")
+    List<Task> findOverdueTasksByUserAccess(@Param("userId") Long userId, @Param("today") LocalDate today);
+
+    // ---- Scoped count queries for dashboard ----
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.status = :status AND t.project.id IN (SELECT p.id FROM Project p WHERE p.createdBy.id = :userId OR (p.team IS NOT NULL AND EXISTS (SELECT tm FROM TeamMember tm WHERE tm.team = p.team AND tm.user.id = :userId)))")
+    long countByStatusAndUserAccess(@Param("status") TaskStatus status, @Param("userId") Long userId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.priority = :priority AND t.project.id IN (SELECT p.id FROM Project p WHERE p.createdBy.id = :userId OR (p.team IS NOT NULL AND EXISTS (SELECT tm FROM TeamMember tm WHERE tm.team = p.team AND tm.user.id = :userId)))")
+    long countByPriorityAndUserAccess(@Param("priority") TaskPriority priority, @Param("userId") Long userId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.assignedTo = :user AND t.status = :status AND t.project.id IN (SELECT p.id FROM Project p WHERE p.createdBy.id = :userId OR (p.team IS NOT NULL AND EXISTS (SELECT tm FROM TeamMember tm WHERE tm.team = p.team AND tm.user.id = :userId)))")
+    long countByAssignedToAndStatusScoped(@Param("user") User user, @Param("status") TaskStatus status, @Param("userId") Long userId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.assignedTo = :user AND t.project.id IN (SELECT p.id FROM Project p WHERE p.createdBy.id = :userId OR (p.team IS NOT NULL AND EXISTS (SELECT tm FROM TeamMember tm WHERE tm.team = p.team AND tm.user.id = :userId)))")
+    long countByAssignedToScoped(@Param("user") User user, @Param("userId") Long userId);
 }

@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/teams")
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides team management REST endpoints
+// OOP — COMPOSITION: composed of TeamService
 public class TeamController {
 
     private final TeamService teamService;

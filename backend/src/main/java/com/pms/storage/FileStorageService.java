@@ -16,6 +16,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Service
+// OOP — ENCAPSULATION: hides file system storage logic (path resolution, directory creation, UUID naming)
+// OOP — ABSTRACTION: provides storeFile(), loadFile(), deleteFile() — callers don't need filesystem details
 public class FileStorageService {
 
     private final Path fileStorageLocation;

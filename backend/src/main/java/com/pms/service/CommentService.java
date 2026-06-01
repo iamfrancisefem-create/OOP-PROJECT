@@ -5,6 +5,7 @@ import com.pms.dto.response.PagedResponse;
 import com.pms.dto.response.CommentResponse;
 import org.springframework.data.domain.Pageable;
 
+// OOP — ABSTRACTION: Contract for comment CRUD on tasks
 public interface CommentService {
     CommentResponse createComment(CommentRequest request);
     PagedResponse<CommentResponse> getCommentsByTaskId(Long taskId, Pageable pageable);

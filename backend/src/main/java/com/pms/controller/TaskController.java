@@ -20,6 +20,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/tasks")
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides task management REST endpoints
+// OOP — COMPOSITION: composed of TaskService
 public class TaskController {
 
     private final TaskService taskService;

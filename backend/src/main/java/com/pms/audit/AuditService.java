@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides audit log creation and SecurityContext extraction logic
+// OOP — COMPOSITION: composed of AuditLogRepository
 public class AuditService {
 
     private final AuditLogRepository auditLogRepository;

@@ -39,10 +39,12 @@
             </div>
             <div class="custom-select-wrapper" style="min-width:160px">
               <select class="form-select" id="reportType">
-                <option value="PROGRESS">Progress Report</option>
+                <option value="PROJECT_PROGRESS">Project Progress</option>
                 <option value="TASK_COMPLETION">Task Completion</option>
                 <option value="TEAM_PERFORMANCE">Team Performance</option>
-                <option value="PRODUCTIVITY">Productivity</option>
+                <option value="USER_PRODUCTIVITY">User Productivity</option>
+                <option value="DEADLINE_REPORT">Deadline Report</option>
+                <option value="WEEKLY_SUMMARY">Weekly Summary</option>
               </select>
             </div>
             <button class="btn btn-white" id="generateReportBtn"><i class="fa-solid fa-file-export"></i> Generate</button>
@@ -120,7 +122,7 @@
     async function loadReports() {
       const container = document.getElementById('reportList');
       try {
-        const res = await ReportAPI.getByProject('', 0);
+        const res = await ReportAPI.getAll(0, 10);
         const reports = res.data.data?.content || res.data.data || [];
         if (!reports.length) {
           container.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon"><i class="fa-solid fa-file"></i></div><h4>No reports generated yet</h4><p>Generate a report to see it here.</p></div>`;

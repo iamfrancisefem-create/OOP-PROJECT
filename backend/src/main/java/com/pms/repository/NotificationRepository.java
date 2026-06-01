@@ -14,6 +14,8 @@ import org.springframework.stereotype.Repository;
  * Repository for {@link Notification} entities.
  */
 @Repository
+// OOP — INHERITANCE: extends JpaRepository
+// OOP — ABSTRACTION: abstracts notification queries and batch update
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
     Page<Notification> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);

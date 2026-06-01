@@ -11,6 +11,8 @@ import org.springframework.stereotype.Repository;
  * Repository for {@link Comment} entities.
  */
 @Repository
+// OOP — INHERITANCE: extends JpaRepository
+// OOP — ABSTRACTION: abstracts comment DB queries
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     Page<Comment> findByTask(Task task, Pageable pageable);

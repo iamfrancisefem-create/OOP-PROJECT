@@ -8,14 +8,14 @@ import { Session, toast } from './utils.js';
 
 const BASE_URL = (typeof API_URL !== 'undefined' ? API_URL : 'http://localhost:8080/api/v1');
 
-// ─── Create Axios Instance ───────────────────────────────
+// ─── Create Axios Instance (ABSTRACTION — wraps raw axios behind a configured facade) ──
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// ─── Request Interceptor — Attach Bearer Token ───────────
+// ─── Request Interceptor — Attach Bearer Token (ENCAPSULATION — token injection hidden) ──
 api.interceptors.request.use(
   config => {
     const token = Session.getToken();
@@ -25,7 +25,7 @@ api.interceptors.request.use(
   err => Promise.reject(err)
 );
 
-// ─── Response Interceptor — Handle Errors & Token Refresh ─
+// ─── Response Interceptor — Handle Errors & Token Refresh (ENCAPSULATION — refresh queue hidden)
 let isRefreshing = false;
 let failedQueue  = [];
 
@@ -88,7 +88,7 @@ api.interceptors.response.use(
   }
 );
 
-// ─── Auth Endpoints ──────────────────────────────────────
+// ─── Auth Endpoints (ENCAPSULATION — endpoint logic bundled; ABSTRACTION — hides HTTP details)
 export const AuthAPI = {
   login(data)              { return api.post('/auth/login', data); },
   register(data)           { return api.post('/auth/register', data); },
@@ -98,8 +98,9 @@ export const AuthAPI = {
   verifyEmail(token)       { return api.post('/auth/verify-email', null, { params: { token } }); },
 };
 
-// ─── User Endpoints ──────────────────────────────────────
+// ─── User Endpoints (ENCAPSULATION — each API object groups related endpoints)
 export const UserAPI = {
+  create(data)                       { return api.post('/users', data); },
   getAll(page = 0, size = 20)       { return api.get('/users', { params: { page, size } }); },
   getById(id)                        { return api.get(`/users/${id}`); },
   updateUser(id, data) {
@@ -116,7 +117,7 @@ export const UserAPI = {
   },
 };
 
-// ─── Project Endpoints ───────────────────────────────────
+// ─── Project Endpoints (ENCAPSULATION — project CRUD grouped)
 export const ProjectAPI = {
   create(data)             { return api.post('/projects', data); },
   getAll(page = 0, size = 10) { return api.get('/projects', { params: { page, size } }); },
@@ -127,7 +128,7 @@ export const ProjectAPI = {
   calculateProgress(id)    { return api.post(`/projects/${id}/calculate-progress`); },
 };
 
-// ─── Project Invitation Endpoints ─────────────────────────
+// ─── Project Invitation Endpoints (ENCAPSULATION — invitation logic grouped)
 export const InvitationAPI = {
   invite(projectId, invitedUserId) {
     return api.post(`/projects/${projectId}/invite`, null, { params: { invitedUserId } });
@@ -137,7 +138,7 @@ export const InvitationAPI = {
   },
 };
 
-// ─── Task Endpoints ──────────────────────────────────────
+// ─── Task Endpoints (ENCAPSULATION — task operations bundled)
 export const TaskAPI = {
   create(data)                    { return api.post('/tasks', data); },
   getAll(page = 0, size = 20)     { return api.get('/tasks', { params: { page, size } }); },
@@ -162,7 +163,7 @@ export const CommentAPI = {
   delete(id)                 { return api.delete(`/comments/${id}`); },
 };
 
-// ─── Team Endpoints ──────────────────────────────────────
+// ─── Team Endpoints (ENCAPSULATION — team CRUD + member management grouped)
 export const TeamAPI = {
   create(data)               { return api.post('/teams', data); },
   getAll(page = 0, size = 10){ return api.get('/teams', { params: { page, size } }); },
@@ -175,13 +176,13 @@ export const TeamAPI = {
   removeMember(teamId, userId) { return api.delete(`/teams/${teamId}/members/${userId}`); },
 };
 
-// ─── Dashboard Endpoints ─────────────────────────────────
+// ─── Dashboard Endpoints (ENCAPSULATION — stats/analytics grouped)
 export const DashboardAPI = {
   getStats()     { return api.get('/dashboard/stats'); },
   getAnalytics() { return api.get('/dashboard/analytics'); },
 };
 
-// ─── Message Endpoints ───────────────────────────────────
+// ─── Message Endpoints (ENCAPSULATION — message operations bundled)
 export const MessageAPI = {
   send(receiverId, content) {
     return api.post('/messages', { receiverId, content });
@@ -192,14 +193,14 @@ export const MessageAPI = {
   markAsRead(senderId) { return api.post(`/messages/chat/${senderId}/read`); },
 };
 
-// ─── Notification Endpoints ──────────────────────────────
+// ─── Notification Endpoints (ENCAPSULATION — notification operations grouped)
 export const NotificationAPI = {
   getAll(page = 0, size = 10) { return api.get('/notifications', { params: { page, size } }); },
   markRead(id)                 { return api.patch(`/notifications/${id}/read`); },
   markAllRead()                { return api.post('/notifications/read-all'); },
 };
 
-// ─── File Endpoints ──────────────────────────────────────
+// ─── File Endpoints (ENCAPSULATION — file upload/download/delete grouped)
 export const FileAPI = {
   upload(projectId, file, onProgress) {
     const fd = new FormData();
@@ -217,18 +218,21 @@ export const FileAPI = {
   },
 };
 
-// ─── Report Endpoints ────────────────────────────────────
+// ─── Report Endpoints (ENCAPSULATION — report generation/download grouped)
 export const ReportAPI = {
   generate(projectId, reportType) {
     return api.post('/reports/generate', null, { params: { projectId, reportType } });
   },
   download(id) { return `${BASE_URL}/reports/download/${id}`; },
+  getAll(page = 0, size = 10) {
+    return api.get('/reports', { params: { page, size } });
+  },
   getByProject(projectId, page = 0) {
     return api.get(`/reports/project/${projectId}`, { params: { page, size: 10 } });
   },
 };
 
-// ─── Milestone Endpoints ─────────────────────────────────
+// ─── Milestone Endpoints (ENCAPSULATION — milestone operations bundled)
 export const MilestoneAPI = {
   create(data)         { return api.post('/milestones', data); },
   getByProject(id)     { return api.get(`/milestones/project/${id}`); },

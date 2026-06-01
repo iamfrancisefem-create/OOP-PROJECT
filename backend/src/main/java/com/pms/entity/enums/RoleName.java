@@ -7,6 +7,7 @@ package com.pms.entity.enums;
  * through the {@code user_roles} join table. Spring Security prefixes
  * them with {@code ROLE_} when building granted authorities.</p>
  */
+// OOP — ENCAPSULATION: defines fixed set of constants for RoleName: user roles
 public enum RoleName {
 
     /** Full system access — user management, configuration, everything. */

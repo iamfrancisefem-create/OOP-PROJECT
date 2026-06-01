@@ -21,6 +21,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/v1/files")
 @RequiredArgsConstructor
+// OOP — ENCAPSULATION: hides file upload/download/delete REST endpoints
+// OOP — COMPOSITION: composed of FileService, FileUploadRepository
 public class FileController {
 
     private final FileService fileService;

@@ -17,6 +17,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — INHERITANCE: extends BaseEntity
+// OOP — ASSOCIATION: @ManyToOne with Task and User
 public class Comment extends BaseEntity {
 
     @Column(nullable = false, columnDefinition = "TEXT")

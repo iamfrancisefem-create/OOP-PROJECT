@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+// OOP — ENCAPSULATION: generic API response wrapper — hides response envelope structure (success, message, data, timestamp)
 public class ApiResponse<T> {
     private boolean success;
     private String message;

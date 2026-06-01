@@ -28,6 +28,9 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+// OOP — INHERITANCE: implements ProjectInvitationService interface
+// OOP — ENCAPSULATION: hides invitation token generation and team-joining logic
+// OOP — COMPOSITION: composed of ProjectInvitationRepository, ProjectRepository, UserRepository, TeamRepository, TeamMemberRepository, NotificationService, ProjectInvitationMapper
 public class ProjectInvitationServiceImpl implements ProjectInvitationService {
 
     private final ProjectInvitationRepository invitationRepository;
