@@ -1,6 +1,8 @@
 import { Session, toast } from './utils.js';
 
-const WS_BASE = 'ws://localhost:8080/ws';
+const WS_BASE = window.location.hostname.includes('vercel.app')
+  ? 'wss://oop-project-production.up.railway.app/ws'
+  : 'ws://localhost:8080/ws';
 
 // ═══════════════════════════════════════════════════════════════
 // OOP — CLASS: ChatSocket (ENCAPSULATION via constructor closure)
