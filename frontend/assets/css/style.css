@@ -404,7 +404,6 @@ textarea:focus-visible {
   width: -webkit-fill-available;
   height: 100vh;
   height: -webkit-fill-available;
-  overflow: hidden;
   background: var(--bg);
 }
 
@@ -477,7 +476,6 @@ textarea:focus-visible {
   flex-direction: column;
   height: 100vh;
   min-width: 0;
-  overflow: hidden;
 }
 
 .navbar {
@@ -778,8 +776,7 @@ textarea:focus-visible {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  z-index: 200;
-  overflow: hidden;
+  z-index: 500;
   animation: fadeInUp var(--transition-fast) ease both;
 }
 

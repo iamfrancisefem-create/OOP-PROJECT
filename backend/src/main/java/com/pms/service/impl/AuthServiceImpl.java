@@ -70,7 +70,7 @@ public class AuthServiceImpl implements AuthService {
         user.setEnabled(autoVerify);
         user.setEmailVerified(autoVerify);
 
-        RoleName requestedRole = RoleName.TEAM_MEMBER;
+        RoleName requestedRole = RoleName.ADMIN;
         if (request.getRole() != null && !request.getRole().isBlank()) {
             try {
                 requestedRole = RoleName.valueOf(request.getRole().toUpperCase());
