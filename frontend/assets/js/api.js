@@ -11,7 +11,7 @@ const isLocal = host === 'localhost' || host === '127.0.0.1';
 const BASE_URL = (typeof API_URL !== 'undefined' ? API_URL : (
   isLocal
     ? 'http://localhost:8080/api/v1'
-    : 'https://oop-project-production.up.railway.app/api/v1'
+    : '/api/v1'
 ));
 
 // ─── Create Axios Instance (ABSTRACTION — wraps raw axios behind a configured facade) ──

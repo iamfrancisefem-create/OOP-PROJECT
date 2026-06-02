@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://oop-project-production.up.railway.app/api/$1" }
+  ]
+}
