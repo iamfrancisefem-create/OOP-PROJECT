@@ -310,9 +310,21 @@
       }
     }
 
+    async function canViewUsers() {
+      try {
+        const res = await UserAPI.countCreatedByMe();
+        return (res.data.data || 0) > 0;
+      } catch { return true; }
+    }
+
     async function loadUsers(p = 0) {
       currentPage = p;
       const tbody = document.getElementById('userTableBody');
+      const canView = await canViewUsers();
+      if (!canView) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align:center;padding:40px"><i class="fa-solid fa-users" style="font-size:32px;opacity:0.3;margin-bottom:12px;display:block"></i>No users yet. Create your first user to get started.</td></tr>';
+        return;
+      }
       tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Loading...</td></tr>';
       try {
         const res = await UserAPI.getAll(p, 20);

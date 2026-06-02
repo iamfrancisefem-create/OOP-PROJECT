@@ -15,6 +15,7 @@ import com.pms.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,6 +91,10 @@ public class UserServiceImpl implements UserService {
                 });
 
         user.setRoles(new HashSet<>(Collections.singletonList(userRole)));
+
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        userRepository.findByEmail(currentEmail).ifPresent(user::setCreatedBy);
+
         User savedUser = userRepository.save(user);
         return userMapper.toResponse(savedUser);
     }
@@ -140,6 +145,14 @@ public class UserServiceImpl implements UserService {
         user.getRoles().clear();
         User updatedUser = userRepository.save(user);
         return userMapper.toResponse(updatedUser);
+    }
+
+    @Override
+    public long countUsersCreatedByMe() {
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return userRepository.countByCreatedBy(currentUser);
     }
 
     @Override

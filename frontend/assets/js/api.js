@@ -121,6 +121,9 @@ export const UserAPI = {
   removeRole(id) {
     return api.delete(`/users/${id}/role`);
   },
+  countCreatedByMe() {
+    return api.get('/users/created-by-me/count');
+  },
 };
 
 // ─── Project Endpoints (ENCAPSULATION — project CRUD grouped)

@@ -61,6 +61,10 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "email_verified", nullable = false)
     private Boolean emailVerified = false;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id")
+    private User createdBy;
+
     // ------------------------------------------------------------------ //
     // Relationships                                                      //
     // ------------------------------------------------------------------ //

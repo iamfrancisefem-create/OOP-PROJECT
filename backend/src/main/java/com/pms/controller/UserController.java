@@ -88,6 +88,13 @@ public class UserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/created-by-me/count")
+    public ResponseEntity<ApiResponse<Long>> countUsersCreatedByMe() {
+        long count = userService.countUsersCreatedByMe();
+        return ResponseEntity.ok(ApiResponse.success("Count retrieved.", count));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);

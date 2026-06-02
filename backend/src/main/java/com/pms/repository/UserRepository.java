@@ -23,4 +23,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findByFullNameContainingIgnoreCase(String name, Pageable pageable);
 
     Page<User> findByEnabledTrue(Pageable pageable);
+
+    long countByCreatedBy(User createdBy);
 }
