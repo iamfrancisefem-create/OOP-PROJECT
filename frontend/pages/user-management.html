@@ -31,6 +31,7 @@
               <input type="text" id="userSearch" placeholder="Search users...">
             </div>
             <button class="btn btn-primary btn-sm" id="createUserBtn"><i class="fa-solid fa-plus"></i> Create User</button>
+            <button class="btn btn-outline btn-sm" id="inviteUserBtn"><i class="fa-solid fa-envelope"></i> Invite by Email</button>
           </div>
         </div>
         <div class="glass-card">
@@ -53,10 +54,67 @@
           </div>
         </div>
         <div id="userPagination" class="mt-6 flex justify-end"></div>
+
+        <div class="glass-card" id="pendingInvitesSection" style="display:none">
+          <div class="section-header" style="margin-bottom:var(--space-4)">
+            <div>
+              <h3>Pending Invitations</h3>
+              <p>Invitations sent but not yet accepted</p>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Invited By</th>
+                  <th>Sent</th>
+                  <th>Expires</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="pendingInvitesBody">
+                <tr><td colspan="6" class="text-muted" style="text-align:center;padding:24px">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
   <div id="modalContainer"></div>
+
+  <!-- Invite User Modal -->
+  <div class="modal-overlay" id="inviteUserModal" style="display:none">
+    <div class="modal-content glass-card" style="max-width:480px;width:100%">
+      <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px 0">
+        <h3 style="margin:0;font-size:18px"><i class="fa-solid fa-envelope" style="margin-right:8px"></i>Invite User</h3>
+        <button class="modal-close" id="closeInviteUserModal" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted)">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:20px 24px">
+        <form id="inviteUserForm">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" id="invEmail" required placeholder="e.g. jane@example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role to Assign</label>
+            <select class="form-select" id="invRole">
+              <option value="PROJECT_MANAGER">Project Manager</option>
+              <option value="TEAM_LEADER">Team Leader</option>
+              <option value="PRODUCT_OWNER">Product Owner</option>
+              <option value="TEAM_MEMBER" selected>Team Member</option>
+            </select>
+          </div>
+          <div class="flex gap-3" style="justify-content:flex-end;margin-top:20px">
+            <button type="button" class="btn btn-outline" id="cancelInviteUser">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="submitInviteUser"><i class="fa-solid fa-paper-plane"></i> Send Invitation</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <!-- Create User Modal -->
   <div class="modal-overlay" id="createUserModal" style="display:none">
@@ -102,7 +160,7 @@
   </div>
 
   <script type="module">
-    import { UserAPI } from '../assets/js/api.js';
+    import { UserAPI, InviteAPI } from '../assets/js/api.js';
     import { Theme, Session, authGuard, initSidebar, toast, confirmDialog, renderPagination, ROLES, DateHelper } from '../assets/js/utils.js';
 
     if (!authGuard()) throw new Error('Not authenticated');
@@ -117,6 +175,99 @@
         if (cb) cb();
       } catch (e) {
         console.error('Failed to load component:', url, e);
+      }
+    }
+
+    // ─── Invite User Modal ─────────────────────────────────
+    function openInviteUserModal() {
+      document.getElementById('inviteUserModal').style.display = 'flex';
+    }
+    function closeInviteUserModal() {
+      document.getElementById('inviteUserModal').style.display = 'none';
+      document.getElementById('inviteUserForm').reset();
+    }
+
+    async function handleInviteUser(e) {
+      e.preventDefault();
+      const email = document.getElementById('invEmail').value.trim();
+      const role = document.getElementById('invRole').value;
+
+      if (!email) { toast('Email is required.', 'warning'); return; }
+
+      const submitBtn = document.getElementById('submitInviteUser');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+
+      try {
+        const res = await InviteAPI.create({ email, role });
+        const invite = res.data.data;
+        let msg = `Invitation sent to ${email}!`;
+        if (invite.inviteLink) {
+          msg += ` Link: ${invite.inviteLink}`;
+        }
+        toast(msg, 'success');
+        closeInviteUserModal();
+        loadPendingInvites();
+      } catch (e) {
+        toast(e.response?.data?.message || 'Failed to send invitation', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Invitation';
+      }
+    }
+
+    async function loadPendingInvites() {
+      const section = document.getElementById('pendingInvitesSection');
+      const tbody = document.getElementById('pendingInvitesBody');
+      try {
+        const res = await InviteAPI.getAll();
+        const invites = res.data.data || [];
+        if (!invites.length) { section.style.display = 'none'; return; }
+        section.style.display = '';
+        tbody.innerHTML = invites.map(inv => {
+          const expDate = new Date(inv.expiresAt);
+          const isExpired = expDate < new Date();
+          return `
+          <tr>
+            <td>${inv.email}</td>
+            <td><span class="badge badge-info" style="font-size:11px">${inv.role.replace(/_/g, ' ')}</span></td>
+            <td>${inv.invitedBy || 'N/A'}</td>
+            <td>${DateHelper.format(inv.createdAt)}</td>
+            <td style="color:${isExpired ? 'var(--danger)' : 'inherit'}">${DateHelper.format(inv.expiresAt)}${isExpired ? ' (Expired)' : ''}</td>
+            <td>
+              <div class="flex items-center gap-2" style="display:inline-flex;gap:8px">
+                <button class="btn btn-sm btn-outline btn-copy-invite" data-link="${inv.inviteLink || ''}" style="font-size:12px;padding:4px 10px"><i class="fa-solid fa-link"></i> Copy Link</button>
+                <button class="btn btn-sm btn-outline btn-cancel-invite" data-id="${inv.id}" style="color:var(--danger);font-size:12px;padding:4px 10px"><i class="fa-solid fa-times"></i> Cancel</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('');
+
+        tbody.querySelectorAll('.btn-copy-invite').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const link = btn.dataset.link;
+            if (!link) { toast('No invite link available', 'warning'); return; }
+            navigator.clipboard.writeText(link).then(() => toast('Invite link copied!', 'success')).catch(() => toast('Failed to copy', 'error'));
+          });
+        });
+        tbody.querySelectorAll('.btn-cancel-invite').forEach(btn => {
+          btn.addEventListener('click', () => cancelInviteHandler(btn.dataset.id));
+        });
+      } catch (e) {
+        console.error('Failed to load invites:', e);
+        section.style.display = 'none';
+      }
+    }
+
+    async function cancelInviteHandler(id) {
+      const ok = await confirmDialog('Cancel Invitation', 'Are you sure you want to cancel this invitation?', 'Cancel Invitation');
+      if (!ok) return;
+      try {
+        await InviteAPI.cancel(id);
+        toast('Invitation cancelled', 'success');
+        loadPendingInvites();
+      } catch (e) {
+        toast(e.response?.data?.message || 'Failed to cancel invitation', 'error');
       }
     }
 
@@ -289,6 +440,7 @@
         await loadComponent('../components/navbar.html', 'navbarContainer');
       await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
         await loadUsers(0);
+        await loadPendingInvites();
       } catch (e) {
         console.error('Init error:', e);
       }
@@ -298,6 +450,13 @@
       document.getElementById('createUserForm').addEventListener('submit', handleCreateUser);
       document.getElementById('createUserModal').addEventListener('click', e => {
         if (e.target === e.currentTarget) closeCreateUserModal();
+      });
+      document.getElementById('inviteUserBtn').addEventListener('click', openInviteUserModal);
+      document.getElementById('closeInviteUserModal').addEventListener('click', closeInviteUserModal);
+      document.getElementById('cancelInviteUser').addEventListener('click', closeInviteUserModal);
+      document.getElementById('inviteUserForm').addEventListener('submit', handleInviteUser);
+      document.getElementById('inviteUserModal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeInviteUserModal();
       });
       document.getElementById('userSearch').addEventListener('input', e => {
         const q = e.target.value.toLowerCase();

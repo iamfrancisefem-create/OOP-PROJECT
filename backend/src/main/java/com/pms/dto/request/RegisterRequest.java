@@ -32,4 +32,6 @@ public class RegisterRequest {
     private String phone;
 
     private String role;
+
+    private String inviteToken;
 }

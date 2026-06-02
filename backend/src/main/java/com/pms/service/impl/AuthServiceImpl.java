@@ -11,6 +11,8 @@ import com.pms.exception.BadRequestException;
 import com.pms.exception.DuplicateResourceException;
 import com.pms.exception.ResourceNotFoundException;
 import com.pms.mapper.UserMapper;
+import com.pms.entity.PlatformInvitation;
+import com.pms.repository.PlatformInvitationRepository;
 import com.pms.repository.RoleRepository;
 import com.pms.repository.UserRepository;
 import com.pms.security.JwtService;
@@ -48,6 +50,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PlatformInvitationRepository platformInvitationRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -71,7 +74,26 @@ public class AuthServiceImpl implements AuthService {
         user.setEmailVerified(autoVerify);
 
         RoleName requestedRole = RoleName.ADMIN;
-        if (request.getRole() != null && !request.getRole().isBlank()) {
+
+        // If invite token provided, resolve role from the invitation
+        if (request.getInviteToken() != null && !request.getInviteToken().isBlank()) {
+            PlatformInvitation invite = platformInvitationRepository.findByToken(request.getInviteToken())
+                    .orElseThrow(() -> new BadRequestException("Invalid or expired invitation token"));
+
+            if (invite.getAccepted()) {
+                throw new BadRequestException("This invitation has already been accepted");
+            }
+
+            if (invite.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
+                throw new BadRequestException("This invitation has expired");
+            }
+
+            if (!invite.getEmail().equalsIgnoreCase(request.getEmail())) {
+                throw new BadRequestException("This invitation was sent to a different email address");
+            }
+
+            requestedRole = invite.getRole();
+        } else if (request.getRole() != null && !request.getRole().isBlank()) {
             try {
                 requestedRole = RoleName.valueOf(request.getRole().toUpperCase());
             } catch (IllegalArgumentException ignored) {}
@@ -86,6 +108,15 @@ public class AuthServiceImpl implements AuthService {
 
         user.setRoles(new HashSet<>(Collections.singletonList(userRole)));
         User savedUser = userRepository.save(user);
+
+        // Mark invite as accepted if used
+        if (request.getInviteToken() != null && !request.getInviteToken().isBlank()) {
+            PlatformInvitation invite = platformInvitationRepository.findByToken(request.getInviteToken()).orElse(null);
+            if (invite != null && !invite.getAccepted()) {
+                invite.setAccepted(true);
+                platformInvitationRepository.save(invite);
+            }
+        }
 
         String verificationToken = jwtService.generateToken(savedUser);
 

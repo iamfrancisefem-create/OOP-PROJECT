@@ -144,6 +144,15 @@ export const InvitationAPI = {
   },
 };
 
+// ─── Platform Invite Endpoints (Admin — invite by email/link)
+export const InviteAPI = {
+  create(data)           { return api.post('/invites', data); },
+  validate(token)        { return api.get('/invites/validate', { params: { token } }); },
+  accept(token)          { return api.post('/invites/accept', null, { params: { token } }); },
+  getAll()               { return api.get('/invites'); },
+  cancel(id)             { return api.delete(`/invites/${id}`); },
+};
+
 // ─── Task Endpoints (ENCAPSULATION — task operations bundled)
 export const TaskAPI = {
   create(data)                    { return api.post('/tasks', data); },

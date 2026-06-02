@@ -111,6 +111,12 @@
     const pwInput = document.getElementById('regPassword');
     const confirmInput = document.getElementById('regConfirm');
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteToken = urlParams.get('invite');
+    if (inviteToken) {
+      document.querySelector('.auth-form-header p').textContent = 'You were invited! Fill in your details to join.';
+    }
+
     pwInput.addEventListener('input', () => {
       const val = pwInput.value;
       if (!val) { document.getElementById('pwStrength').style.display = 'none'; return; }
@@ -136,12 +142,14 @@
 
       setLoading(btn, true);
       try {
-        const res = await AuthAPI.register({
+        const payload = {
           fullName: document.getElementById('regName').value.trim(),
           email: document.getElementById('regEmail').value.trim(),
           phone: document.getElementById('regPhone').value.trim(),
           password: pwInput.value,
-        });
+        };
+        if (inviteToken) payload.inviteToken = inviteToken;
+        const res = await AuthAPI.register(payload);
         const { token, refreshToken, id, email, fullName, phone, roles } = res.data.data;
         Session.set(token, refreshToken, { id, email, fullName, phone, roles });
         toast('Account created successfully!', 'success');
