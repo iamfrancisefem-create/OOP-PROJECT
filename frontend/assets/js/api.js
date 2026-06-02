@@ -6,10 +6,12 @@
 
 import { Session, toast } from './utils.js';
 
+const host = window.location.hostname;
+const isLocal = host === 'localhost' || host === '127.0.0.1';
 const BASE_URL = (typeof API_URL !== 'undefined' ? API_URL : (
-  window.location.hostname.includes('vercel.app')
-    ? '/api/v1'
-    : 'http://localhost:8080/api/v1'
+  isLocal
+    ? 'http://localhost:8080/api/v1'
+    : '/api/v1'
 ));
 
 // ─── Create Axios Instance (ABSTRACTION — wraps raw axios behind a configured facade) ──
