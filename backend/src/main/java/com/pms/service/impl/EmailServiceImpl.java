@@ -22,7 +22,7 @@ public class EmailServiceImpl implements EmailService {
     @Value("${SENDGRID_API_KEY:${MAIL_PASSWORD:}}")
     private String sendgridApiKey;
 
-    @Value("${EMAIL_FROM:noreply@iamfrancisefem.tech}")
+    @Value("${EMAIL_FROM:projectflow@example.com}")
     private String emailFrom;
 
     private final HttpClient http = HttpClient.newBuilder()
