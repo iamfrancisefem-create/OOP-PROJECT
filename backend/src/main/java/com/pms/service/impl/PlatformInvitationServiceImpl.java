@@ -127,6 +127,7 @@ public class PlatformInvitationServiceImpl implements PlatformInvitationService 
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<InviteResponse> getPendingInvites() {
         return invitationRepository.findByAcceptedFalseOrderByCreatedAtDesc().stream()
                 .map(invite -> toResponse(invite, null))
