@@ -1,17 +1,19 @@
 package com.pms.service.impl;
 
 import com.pms.service.EmailService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class EmailServiceImpl implements EmailService {
+
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
 
     @Autowired(required = false)
     private JavaMailSender mailSender;
@@ -19,10 +21,12 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendEmail(String to, String subject, String text) {
         log.warn("=== EMAIL (logged as fallback) ===\nTo: {}\nSubject: {}\nBody:\n{}\n=== END EMAIL ===", to, subject, text);
-        if (mailSender == null) {
-            log.warn("Mail sender not configured — email not actually sent to {}", to);
+
+        if (mailSender == null || mailUsername == null || mailUsername.isBlank()) {
+            log.warn("SMTP not configured (set MAIL_USERNAME/MAIL_PASSWORD env vars) — email not sent to {}", to);
             return;
         }
+
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(to);

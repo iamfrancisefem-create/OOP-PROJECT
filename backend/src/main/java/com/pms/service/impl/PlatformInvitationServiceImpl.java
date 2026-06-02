@@ -77,7 +77,7 @@ public class PlatformInvitationServiceImpl implements PlatformInvitationService 
 
         PlatformInvitation saved = invitationRepository.save(invitation);
 
-        String inviteLink = inviteLinkBase + "/pages/register.html?invite=" + token;
+        String inviteLink = buildInviteLink(token);
         sendInviteEmail(request.getEmail(), inviteLink, roleName.name());
 
         log.info("Platform invitation created for {} with role {} by {}", request.getEmail(), roleName, currentUser.getEmail());
@@ -103,7 +103,7 @@ public class PlatformInvitationServiceImpl implements PlatformInvitationService 
         PlatformInvitation saved = invitationRepository.save(invitation);
 
         log.info("Platform invitation accepted for {}", saved.getEmail());
-        return toResponse(saved, null);
+        return toResponse(saved, buildInviteLink(invitation.getToken()));
     }
 
     @Override
@@ -119,14 +119,14 @@ public class PlatformInvitationServiceImpl implements PlatformInvitationService 
             throw new BadRequestException("This invitation has expired");
         }
 
-        return toResponse(invitation, null);
+        return toResponse(invitation, buildInviteLink(invitation.getToken()));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<InviteResponse> getPendingInvites() {
         return invitationRepository.findByAcceptedFalseOrderByCreatedAtDesc().stream()
-                .map(invite -> toResponse(invite, null))
+                .map(invite -> toResponse(invite, buildInviteLink(invite.getToken())))
                 .toList();
     }
 
@@ -151,6 +151,10 @@ public class PlatformInvitationServiceImpl implements PlatformInvitationService 
                 .inviteLink(inviteLink)
                 .createdAt(invitation.getCreatedAt())
                 .build();
+    }
+
+    private String buildInviteLink(String token) {
+        return inviteLinkBase + "/pages/register.html?invite=" + token;
     }
 
     private void sendInviteEmail(String to, String inviteLink, String role) {
