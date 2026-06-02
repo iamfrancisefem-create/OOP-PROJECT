@@ -1,44 +1,69 @@
 package com.pms.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pms.service.EmailService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.Map;
 
 @Service
 @Slf4j
 public class EmailServiceImpl implements EmailService {
 
-    @Value("${spring.mail.username:}")
-    private String mailUsername;
+    private static final String SENDGRID_API = "https://api.sendgrid.com/v3/mail/send";
 
-    @Value("${spring.mail.password:}")
-    private String mailPassword;
+    @Value("${SENDGRID_API_KEY:${MAIL_PASSWORD:}}")
+    private String sendgridApiKey;
 
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
+    @Value("${EMAIL_FROM:noreply@iamfrancisefem.tech}")
+    private String emailFrom;
+
+    private final HttpClient http = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+
+    private final ObjectMapper json = new ObjectMapper();
 
     @Override
     public void sendEmail(String to, String subject, String text) {
         log.warn("=== EMAIL (logged) ===\nTo: {}\nSubject: {}\nBody:\n{}\n=== END ===", to, subject, text);
 
-        if (mailSender == null || mailUsername == null || mailUsername.isBlank() ||
-            mailPassword == null || mailPassword.isBlank()) {
-            log.warn("SMTP not configured — set SendGrid or Gmail credentials on Railway. Email not sent to {}", to);
+        if (sendgridApiKey == null || sendgridApiKey.isBlank()) {
+            log.warn("SendGrid not configured — set SENDGRID_API_KEY env var. Email not sent to {}", to);
             return;
         }
 
         new Thread(() -> {
             try {
-                SimpleMailMessage message = new SimpleMailMessage();
-                message.setTo(to);
-                message.setSubject(subject);
-                message.setText(text);
-                mailSender.send(message);
-                log.info("Email sent successfully to {}", to);
+                Map<String, Object> body = Map.of(
+                    "personalizations", new Object[]{ Map.of("to", new Object[]{ Map.of("email", to) }) },
+                    "from", Map.of("email", emailFrom),
+                    "subject", subject,
+                    "content", new Object[]{ Map.of("type", "text/plain", "value", text) }
+                );
+
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(SENDGRID_API))
+                        .header("Authorization", "Bearer " + sendgridApiKey)
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(body)))
+                        .timeout(Duration.ofSeconds(15))
+                        .build();
+
+                HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() == 202) {
+                    log.info("Email sent successfully to {}", to);
+                } else {
+                    log.error("SendGrid API error ({}): {} — {}", response.statusCode(), to, response.body());
+                }
             } catch (Exception e) {
                 log.error("Failed to send email to {}: {}", to, e.getMessage());
             }
