@@ -384,18 +384,27 @@ export function initSidebar(activeLink) {
       : '<i class="fa-solid fa-moon"></i>';
   }
 
+  // ─── Dropdown helpers (move panels to body for reliable stacking) ──
+  function openDropdown(panel, anchor) {
+    document.querySelectorAll('.dropdown-panel.open').forEach(p => { if (p !== panel) p.classList.remove('open'); });
+    const rect = anchor.getBoundingClientRect();
+    if (panel.parentElement !== document.body) document.body.appendChild(panel);
+    panel.style.position = 'fixed';
+    panel.style.top = (rect.bottom + 8) + 'px';
+    panel.style.right = (window.innerWidth - rect.right) + 'px';
+    panel.style.marginTop = '0';
+    panel.style.zIndex = '9999';
+    panel.classList.toggle('open');
+  }
+
   // Notification bell toggle
   const notifBell = document.getElementById('notifBell');
   const notifDropdown = document.getElementById('notifDropdown');
   if (notifBell && notifDropdown) {
+    notifDropdown.dataset.anchorId = 'notifBell';
     notifBell.addEventListener('click', e => {
       e.stopPropagation();
-      const rect = notifBell.getBoundingClientRect();
-      notifDropdown.style.position = 'fixed';
-      notifDropdown.style.top = (rect.bottom + 8) + 'px';
-      notifDropdown.style.right = (window.innerWidth - rect.right) + 'px';
-      notifDropdown.style.marginTop = '0';
-      notifDropdown.classList.toggle('open');
+      openDropdown(notifDropdown, notifBell);
     });
   }
 
@@ -411,6 +420,7 @@ export function initSidebar(activeLink) {
     const menu = document.createElement('div');
     menu.className = 'dropdown-panel';
     menu.id = 'profileDropdown';
+    menu.dataset.anchorId = 'navAvatar';
     menu.style.width = '200px';
     menu.innerHTML = `
       <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
@@ -427,12 +437,7 @@ export function initSidebar(activeLink) {
 
     profileAvatar.addEventListener('click', e => {
       e.stopPropagation();
-      const rect = profileAvatar.getBoundingClientRect();
-      menu.style.position = 'fixed';
-      menu.style.top = (rect.bottom + 8) + 'px';
-      menu.style.right = (window.innerWidth - rect.right) + 'px';
-      menu.style.marginTop = '0';
-      menu.classList.toggle('open');
+      openDropdown(menu, profileAvatar);
     });
 
     document.getElementById('logoutBtn').addEventListener('click', e => {
@@ -454,7 +459,9 @@ export function initSidebar(activeLink) {
   // Close dropdowns on outside click
   document.addEventListener('click', e => {
     document.querySelectorAll('.dropdown-panel.open').forEach(panel => {
-      if (!panel.closest('.dropdown-wrapper')?.contains(e.target)) {
+      const anchorId = panel.dataset.anchorId;
+      const anchor = anchorId ? document.getElementById(anchorId) : null;
+      if (!panel.contains(e.target) && (!anchor || !anchor.contains(e.target))) {
         panel.classList.remove('open');
       }
     });
