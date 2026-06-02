@@ -243,6 +243,9 @@
       await loadComponent('../components/navbar.html', 'navbarContainer');
       await loadComponent('../components/sidebar.html', 'sidebarContainer', () => initSidebar(page));
       loadContacts();
+      if (window.innerWidth < 768) {
+        document.getElementById('chatSidebar').classList.add('open');
+      }
     }
     init();
   </script>
