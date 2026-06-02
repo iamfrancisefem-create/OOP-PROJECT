@@ -17,6 +17,9 @@
   :root { --sidebar-width: 0px; }
 
   .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
     transform: translateX(-100%);
     width: 260px;
     z-index: 300;
