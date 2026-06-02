@@ -100,7 +100,7 @@
     </div>
   </div>
   <script type="module">
-    import { AuthAPI } from '../assets/js/api.js';
+    import { AuthAPI, InviteAPI } from '../assets/js/api.js';
     import { Session, toast, validateForm, setLoading, showAlert, hideAlert, Validators } from '../assets/js/utils.js';
 
     if (Session.isLoggedIn()) window.location.href = 'dashboard.html';
@@ -114,7 +114,16 @@
     const urlParams = new URLSearchParams(window.location.search);
     const inviteToken = urlParams.get('invite');
     if (inviteToken) {
-      document.querySelector('.auth-form-header p').textContent = 'You were invited! Fill in your details to join.';
+      document.querySelector('.auth-form-header p').textContent = 'You were invited! Set up your account to join.';
+      InviteAPI.validate(inviteToken).then(res => {
+        const data = res.data.data;
+        if (data && data.email) {
+          document.getElementById('regEmail').value = data.email;
+          document.getElementById('regEmail').readOnly = true;
+        }
+      }).catch(() => {
+        document.querySelector('.auth-form-header p').textContent = 'This invitation link is invalid or expired.';
+      });
     }
 
     pwInput.addEventListener('input', () => {
