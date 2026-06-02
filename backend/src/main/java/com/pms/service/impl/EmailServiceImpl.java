@@ -15,6 +15,9 @@ public class EmailServiceImpl implements EmailService {
     @Value("${spring.mail.username:}")
     private String mailUsername;
 
+    @Value("${spring.mail.password:}")
+    private String mailPassword;
+
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
@@ -22,8 +25,9 @@ public class EmailServiceImpl implements EmailService {
     public void sendEmail(String to, String subject, String text) {
         log.warn("=== EMAIL (logged) ===\nTo: {}\nSubject: {}\nBody:\n{}\n=== END ===", to, subject, text);
 
-        if (mailSender == null || mailUsername == null || mailUsername.isBlank()) {
-            log.warn("SMTP not configured (set MAIL_USERNAME/MAIL_PASSWORD env vars) — email not sent to {}", to);
+        if (mailSender == null || mailUsername == null || mailUsername.isBlank() ||
+            mailPassword == null || mailPassword.isBlank()) {
+            log.warn("SMTP not configured — set SendGrid or Gmail credentials on Railway. Email not sent to {}", to);
             return;
         }
 

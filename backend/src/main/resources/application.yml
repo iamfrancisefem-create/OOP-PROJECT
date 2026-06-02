@@ -35,12 +35,14 @@ spring:
       max-request-size: 10MB
 
   # ---------------------------------------------------------------------------
-  # Mail (SMTP) — used for notifications and password resets
+  # Mail (SMTP) — SendGrid (recommended for Railway) or Gmail
+  #   SendGrid: MAIL_HOST=smtp.sendgrid.net  MAIL_USERNAME=apikey  MAIL_PASSWORD=<api-key>
+  #   Gmail:    MAIL_HOST=smtp.gmail.com     MAIL_USERNAME=<email> MAIL_PASSWORD=<app-password>
   # ---------------------------------------------------------------------------
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
+    host: ${MAIL_HOST:smtp.sendgrid.net}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
+    username: ${MAIL_USERNAME:apikey}
     password: ${MAIL_PASSWORD:}
     properties:
       mail:
