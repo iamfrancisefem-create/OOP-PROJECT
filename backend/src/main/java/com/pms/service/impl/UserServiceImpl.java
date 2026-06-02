@@ -11,8 +11,10 @@ import com.pms.exception.ResourceNotFoundException;
 import com.pms.mapper.UserMapper;
 import com.pms.repository.RoleRepository;
 import com.pms.repository.UserRepository;
+import com.pms.service.EmailService;
 import com.pms.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import jakarta.persistence.EntityManager;
@@ -32,15 +34,23 @@ import java.util.List;
 // OOP — COMPOSITION: composed of UserRepository, RoleRepository, UserMapper, PasswordEncoder
 public class UserServiceImpl implements UserService {
 
+    @Value("${app.invite-link-base:https://oop-project-tau.vercel.app}")
+    private String inviteLinkBase;
+
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final EntityManager entityManager;
+    private final EmailService emailService;
 
     @Override
     public PagedResponse<UserResponse> getAllUsers(Pageable pageable) {
-        Page<User> usersPage = userRepository.findAll(pageable);
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+
+        Page<User> usersPage = userRepository.findByCreatedBy(currentUser, pageable);
         List<UserResponse> content = usersPage.getContent().stream()
                 .map(userMapper::toResponse)
                 .toList();
@@ -98,7 +108,22 @@ public class UserServiceImpl implements UserService {
         userRepository.findByEmail(currentEmail).ifPresent(user::setCreatedBy);
 
         User savedUser = userRepository.save(user);
-        return userMapper.toResponse(savedUser);
+
+        String loginLink = inviteLinkBase + "/pages/login.html";
+
+        emailService.sendEmail(
+                email,
+                "Welcome to ProjectFlow — Account Created",
+                "Hello " + fullName + ",\n\nAn admin has created an account for you on ProjectFlow.\n\n" +
+                "Your login email: " + email + "\n" +
+                "Please use the password provided by your admin to sign in.\n\n" +
+                "Login here: " + loginLink + "\n\n" +
+                "Best regards,\nThe ProjectFlow Team"
+        );
+
+        UserResponse response = userMapper.toResponse(savedUser);
+        response.setSetupLink(loginLink);
+        return response;
     }
 
     @Override

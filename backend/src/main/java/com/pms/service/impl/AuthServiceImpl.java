@@ -17,12 +17,10 @@ import com.pms.repository.RoleRepository;
 import com.pms.repository.UserRepository;
 import com.pms.security.JwtService;
 import com.pms.service.AuthService;
+import com.pms.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
@@ -48,6 +46,9 @@ public class AuthServiceImpl implements AuthService {
     @Value("${app.auto-verify:true}")
     private boolean autoVerify;
 
+    @Value("${app.invite-link-base:https://oop-project-tau.vercel.app}")
+    private String inviteLinkBase;
+
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PlatformInvitationRepository platformInvitationRepository;
@@ -56,8 +57,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserMapper userMapper;
 
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -273,36 +273,20 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void sendVerificationEmail(String email, String name, String token) {
-        try {
-            String verificationLink = "http://localhost:5500/pages/verify-email.html?token=" + token;
-            if (mailSender == null) {
-                log.info("Mail sender not configured. Verification link in console: \n{}", verificationLink);
-                return;
-            }
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(email);
-            message.setSubject("Verify your email - Project Management System");
-            message.setText("Hello " + name + ",\n\nPlease verify your email by clicking the link below:\n" + verificationLink);
-            mailSender.send(message);
-        } catch (Exception e) {
-            log.error("Failed to send verification email to {}: {}", email, e.getMessage());
-        }
+        String verificationLink = inviteLinkBase + "/pages/verify-email.html?token=" + token;
+        emailService.sendEmail(
+                email,
+                "Verify your email - ProjectFlow",
+                "Hello " + name + ",\n\nPlease verify your email by clicking the link below:\n" + verificationLink
+        );
     }
 
     private void sendPasswordResetEmail(String email, String token) {
-        try {
-            if (mailSender == null) {
-                log.info("Mail sender not configured. Password Reset token in console: \n{}", token);
-                return;
-            }
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(email);
-            message.setSubject("Password Reset Request");
-            message.setText("Click the following link to reset your password:\n" +
-                    "http://localhost:3000/reset-password?token=" + token);
-            mailSender.send(message);
-        } catch (Exception e) {
-            log.error("Failed to send password reset email to {}: {}", email, e.getMessage());
-        }
+        String resetLink = inviteLinkBase + "/pages/reset-password.html?token=" + token;
+        emailService.sendEmail(
+                email,
+                "Password Reset Request - ProjectFlow",
+                "Click the following link to reset your password:\n" + resetLink
+        );
     }
 }

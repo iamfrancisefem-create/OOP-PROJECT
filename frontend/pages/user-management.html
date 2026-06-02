@@ -298,8 +298,13 @@
       submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
 
       try {
-        await UserAPI.create({ fullName, email, password, phone, role });
-        toast('User created successfully', 'success');
+        const res = await UserAPI.create({ fullName, email, password, phone, role });
+        const user = res.data.data;
+        let msg = `User created successfully!`;
+        if (user.setupLink) {
+          msg += ` Login link: ${user.setupLink}`;
+        }
+        toast(msg, 'success');
         closeCreateUserModal();
         loadUsers(currentPage);
       } catch (e) {

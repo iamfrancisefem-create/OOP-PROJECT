@@ -12,13 +12,11 @@ import com.pms.exception.ResourceNotFoundException;
 import com.pms.repository.PlatformInvitationRepository;
 import com.pms.repository.RoleRepository;
 import com.pms.repository.UserRepository;
+import com.pms.service.EmailService;
 import com.pms.service.PlatformInvitationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,9 +36,7 @@ public class PlatformInvitationServiceImpl implements PlatformInvitationService 
     private final PlatformInvitationRepository invitationRepository;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
+    private final EmailService emailService;
 
     private User getCurrentAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -158,18 +154,12 @@ public class PlatformInvitationServiceImpl implements PlatformInvitationService 
     }
 
     private void sendInviteEmail(String to, String inviteLink, String role) {
-        try {
-            if (mailSender == null) {
-                log.info("Mail sender not configured. Invite link for {}:\n{}", to, inviteLink);
-                return;
-            }
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(to);
-            message.setSubject("You're invited to join ProjectFlow");
-            message.setText("Hello,\n\nYou have been invited to join ProjectFlow as " + role + ".\n\nClick the link below to accept the invitation and create your account:\n" + inviteLink + "\n\nThis link expires in 7 days.\n\nBest regards,\nThe ProjectFlow Team");
-            mailSender.send(message);
-        } catch (Exception e) {
-            log.error("Failed to send invite email to {}: {}", to, e.getMessage());
-        }
+        emailService.sendEmail(
+                to,
+                "You're invited to join ProjectFlow",
+                "Hello,\n\nYou have been invited to join ProjectFlow as " + role + ".\n\n" +
+                "Click the link below to accept the invitation and create your account:\n" + inviteLink + "\n\n" +
+                "This link expires in 7 days.\n\nBest regards,\nThe ProjectFlow Team"
+        );
     }
 }

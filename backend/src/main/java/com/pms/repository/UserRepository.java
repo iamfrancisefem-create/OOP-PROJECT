@@ -24,5 +24,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Page<User> findByEnabledTrue(Pageable pageable);
 
+    Page<User> findByCreatedBy(User createdBy, Pageable pageable);
+
     long countByCreatedBy(User createdBy);
 }
