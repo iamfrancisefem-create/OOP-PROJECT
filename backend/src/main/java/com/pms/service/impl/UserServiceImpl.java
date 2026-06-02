@@ -15,6 +15,7 @@ import com.pms.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import jakarta.persistence.EntityManager;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final EntityManager entityManager;
 
     @Override
     public PagedResponse<UserResponse> getAllUsers(Pageable pageable) {
@@ -161,6 +163,24 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
         user.getRoles().clear();
+
+        entityManager.createNativeQuery("UPDATE projects SET created_by = NULL WHERE created_by = :id")
+                .setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("UPDATE teams SET created_by = NULL WHERE created_by = :id")
+                .setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("UPDATE comments SET user_id = NULL WHERE user_id = :id")
+                .setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM messages WHERE sender_id = :id OR receiver_id = :id")
+                .setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("UPDATE file_uploads SET uploaded_by = NULL WHERE uploaded_by = :id")
+                .setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("UPDATE reports SET generated_by = NULL WHERE generated_by = :id")
+                .setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("UPDATE tasks SET created_by = NULL WHERE created_by = :id")
+                .setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("UPDATE platform_invitations SET invited_by_id = NULL WHERE invited_by_id = :id")
+                .setParameter("id", id).executeUpdate();
+
         userRepository.delete(user);
     }
 
